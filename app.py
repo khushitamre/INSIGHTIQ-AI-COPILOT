@@ -705,7 +705,7 @@ with chat_col:
         </div>
         """, unsafe_allow_html=True)
 
-─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 # PDF REPORT
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-label" style="margin-top:1.5rem;">📄 &nbsp;Executive Report</div>', unsafe_allow_html=True)
