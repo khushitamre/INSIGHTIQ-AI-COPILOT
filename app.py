@@ -455,7 +455,7 @@ with col_b:
     apply_theme(fig_scatter, 280)
     st.plotly_chart(fig_scatter, use_container_width=True, key="scatter")
 
-────────────────────────────────────────────────────────────────────────────
+# ─────────────────────
 # AI FORECAST
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-label">🔮 &nbsp;AI Predictive Engine</div>', unsafe_allow_html=True)
