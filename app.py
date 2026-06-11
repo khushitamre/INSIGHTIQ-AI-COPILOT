@@ -1107,6 +1107,21 @@ st.subheader("🎯 AI Strategic Recommendations")
 
 recommendations = []
 
+# =========================
+# KPI CALCULATIONS
+# =========================
+
+total_revenue = df["Sales"].sum()
+
+if "Profit" in df.columns:
+    total_profit = df["Profit"].sum()
+else:
+    total_profit = 0
+
+total_orders = len(df)
+
+health_score = 85
+
 if total_profit / total_revenue < 0.15:
     recommendations.append(
         "Improve profit margins through pricing optimization."
