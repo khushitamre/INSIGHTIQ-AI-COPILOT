@@ -1,4 +1,4 @@
-===========================================================
+# ===========================================================
 #  InsightIQ AI Copilot Pro  —  app.py
 #  World-Class Streamlit Business Intelligence Dashboard
 #  Developer : Khushi Tamre  |  AI & BI Engineer
