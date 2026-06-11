@@ -62,7 +62,7 @@ const topProducts = [
   { name: "iPad Air", revenue: 421000, margin: 25 },
 ];
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+# // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 const fmt = (n) =>
   n >= 1e7
@@ -74,7 +74,7 @@ const fmt = (n) =>
 const fmtShort = (n) =>
   n >= 1e6 ? `₹${(n / 1e6).toFixed(1)}M` : `₹${(n / 1000).toFixed(0)}K`;
 
-// ─── ANIMATED NUMBER ─────────────────────────────────────────────────────────
+# // ─── ANIMATED NUMBER ─────────────────────────────────────────────────────────
 
 function AnimatedNumber({ value, prefix = "", suffix = "", duration = 1500 }) {
   const [display, setDisplay] = useState(0);
@@ -101,7 +101,7 @@ function AnimatedNumber({ value, prefix = "", suffix = "", duration = 1500 }) {
   );
 }
 
-// ─── KPI CARD ────────────────────────────────────────────────────────────────
+# // ─── KPI CARD ────────────────────────────────────────────────────────────────
 
 function KpiCard({ icon, label, value, sub, color, trend }) {
   return (
@@ -167,7 +167,7 @@ function KpiCard({ icon, label, value, sub, color, trend }) {
   );
 }
 
-// ─── SECTION HEADER ──────────────────────────────────────────────────────────
+# // ─── SECTION HEADER ──────────────────────────────────────────────────────────
 
 function SectionHeader({ icon, title, subtitle }) {
   return (
@@ -201,7 +201,7 @@ function SectionHeader({ icon, title, subtitle }) {
   );
 }
 
-// ─── GLASS CARD ──────────────────────────────────────────────────────────────
+# // ─── GLASS CARD ──────────────────────────────────────────────────────────────
 
 function Card({ children, style = {} }) {
   return (
@@ -220,7 +220,7 @@ function Card({ children, style = {} }) {
   );
 }
 
-// ─── AI CHAT ─────────────────────────────────────────────────────────────────
+# // ─── AI CHAT ─────────────────────────────────────────────────────────────────
 
 function AiAssistant({ kpis }) {
   const [input, setInput] = useState("");
@@ -398,7 +398,7 @@ Keep answers concise but impactful (3-5 sentences max unless asked for detail).`
 }
 
 
-// ─── CUSTOM TOOLTIP ──────────────────────────────────────────────────────────
+# // ─── CUSTOM TOOLTIP ──────────────────────────────────────────────────────────
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -423,7 +423,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-// ─── HEALTH GAUGE ────────────────────────────────────────────────────────────
+# // ─── HEALTH GAUGE ────────────────────────────────────────────────────────────
 
 function HealthGauge({ score }) {
   const angle = (score / 100) * 180 - 90;
@@ -467,7 +467,7 @@ function HealthGauge({ score }) {
   );
 }
 
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+# // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 
 export default function InsightIQPro() {
   const [activeTab, setActiveTab] = useState("overview");
