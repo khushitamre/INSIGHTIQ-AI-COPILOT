@@ -3,163 +3,142 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from sklearn.linear_model import LinearRegression
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet
-import io
 from datetime import datetime
 
-st.set_page_config(
-    page_title="INSIGHT IQ AI COPILOT PRO",
-    page_icon="🚀",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="INSIGHT IQ • AI COPILOT", page_icon="⚡", layout="wide")
 
-# ====================== CUSTOM CSS ======================
+# ====================== DANGEROUS CSS ======================
 st.markdown("""
 <style>
-    .main {background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);}
-    .stMetric {background: rgba(255,255,255,0.1); border-radius: 15px; padding: 10px;}
-    h1 {font-family: 'Arial'; color: #7C3AED; text-shadow: 0 0 20px #7C3AED;}
-    .glass {background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px;}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+    
+    .main {
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 50%, #000000 100%);
+    }
+    .title {
+        font-size: 4rem !important;
+        font-weight: 900;
+        background: linear-gradient(90deg, #7C3AED, #00F5FF, #FF00CC);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+        margin-bottom: 5px;
+    }
+    .subtitle {
+        text-align: center;
+        color: #00F5FF;
+        font-size: 1.4rem;
+        letter-spacing: 4px;
+        margin-top: -15px;
+    }
+    .glass {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 20px;
+        padding: 20px;
+        border: 1px solid rgba(0, 255, 255, 0.15);
+        backdrop-filter: blur(15px);
+    }
+    .neon { text-shadow: 0 0 20px #00F5FF; }
+    .metric-value { font-size: 2rem; font-weight: 700; }
 </style>
 """, unsafe_allow_html=True)
 
-# ====================== DATA LOAD ======================
+# ====================== DATA ======================
 @st.cache_data
 def load_data():
     df = pd.read_csv("business_data.csv")
     df.columns = df.columns.str.strip()
     if "Order_Date" in df.columns:
-        df["Order_Date"] = pd.to_datetime(df["Order_Date"], errors="coerce")
-        df["Year"] = df["Order_Date"].dt.year
-        df["Month"] = df["Order_Date"].dt.month
-        df["Quarter"] = "Q" + df["Order_Date"].dt.quarter.astype(str)
-        df["YearMonth"] = df["Order_Date"].dt.to_period("M").astype(str)
+        df = pd.to_datetime(df , errors="coerce")
+        df = df .dt.year
+        df = df .dt.month
+        df = df .dt.to_period("M").astype(str)
     return df
 
 df = load_data()
 
 # ====================== SIDEBAR ======================
 with st.sidebar:
-    st.title("⚙️ Control Center")
+    st.markdown("# ⚡ INSIGHT IQ")
+    st.markdown("### AI Business Copilot")
     st.markdown("---")
     
-    years = sorted(df["Year"].dropna().unique())
+    years = sorted(df .dropna().unique())
     selected_years = st.multiselect("Select Year", years, default=years)
     
     regions = sorted(df["Region"].dropna().unique())
     selected_regions = st.multiselect("Select Region", regions, default=regions)
     
-    segments = sorted(df["Segment"].dropna().unique())
-    selected_segments = st.multiselect("Select Segment", segments, default=segments)
-    
-    categories = sorted(df["Category"].dropna().unique())
+    categories = sorted(df .dropna().unique())
     selected_categories = st.multiselect("Select Category", categories, default=categories)
 
-    st.markdown("---")
-    st.success("🚀 AI System Online")
-
 # ====================== FILTER ======================
-filtered_df = df[
-    (df["Year"].isin(selected_years)) &
-    (df["Region"].isin(selected_regions)) &
-    (df["Segment"].isin(selected_segments)) &
-    (df["Category"].isin(selected_categories))
+filtered_df = df .isin(selected_years)) &
+    (df .isin(selected_regions)) &
+    (df .isin(selected_categories))
 ]
 
 # ====================== KPIs ======================
-total_sales = filtered_df["Sales"].sum()
-total_profit = filtered_df["Profit"].sum()
+total_sales = filtered_df .sum()
+total_profit = filtered_df .sum()
 total_orders = filtered_df["Order_ID"].nunique()
 profit_margin = (total_profit / total_sales * 100) if total_sales > 0 else 0
 avg_order = total_sales / total_orders if total_orders > 0 else 0
 
-top_region = filtered_df.groupby("Region")["Sales"].sum().idxmax()
-top_category = filtered_df.groupby("Category")["Sales"].sum().idxmax()
-top_product = filtered_df.groupby("Product")["Sales"].sum().idxmax()
+top_region = filtered_df.groupby("Region") .sum().idxmax()
+top_category = filtered_df.groupby("Category") .sum().idxmax()
+top_product = filtered_df.groupby("Product") .sum().idxmax()
 
-health_score = 95 if profit_margin >= 20 else 85 if profit_margin >= 15 else 75 if profit_margin >= 10 else 60
+health_score = 95 if profit_margin >= 20 else 85 if profit_margin >= 15 else 72
 
-# ====================== TABS ======================
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏠 Executive Dashboard", "📊 Analytics", "🔮 AI Forecast", "🧠 Insights", "📄 Reports"])
+# ====================== HEADER ======================
+st.markdown('<h1 class="title">INSIGHT IQ</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle neon">AI POWERED BUSINESS INTELLIGENCE PLATFORM</p>', unsafe_allow_html=True)
+st.markdown("---")
 
-with tab1:
-    st.markdown("# 🚀 INSIGHT IQ AI COPILOT PRO")
-    st.markdown("### *Next-Gen Business Intelligence Platform*")
-    
-    col1, col2, col3, col4, col5 = st.columns(5)
-    with col1: st.metric("💰 Revenue", f"₹{total_sales:,.0f}")
-    with col2: st.metric("📈 Profit", f"₹{total_profit:,.0f}")
-    with col3: st.metric("🛒 Orders", f"{total_orders:,}")
-    with col4: st.metric("🎯 Margin", f"{profit_margin:.1f}%")
-    with col5: st.metric("💎 Avg Order", f"₹{avg_order:,.0f}")
+# ====================== KPI SECTION ======================
+col1, col2, col3, col4, col5 = st.columns(5)
+with col1:
+    st.markdown(f'<div class="glass"><p style="margin:0;color:#aaa;">TOTAL REVENUE</p><p class="metric-value" style="color:#00F5FF;">₹{total_sales:,.0f}</p></div>', unsafe_allow_html=True)
+with col2:
+    st.markdown(f'<div class="glass"><p style="margin:0;color:#aaa;">TOTAL PROFIT</p><p class="metric-value" style="color:#00FFAA;">₹{total_profit:,.0f}</p></div>', unsafe_allow_html=True)
+with col3:
+    st.markdown(f'<div class="glass"><p style="margin:0;color:#aaa;">ORDERS</p><p class="metric-value" style="color:#FF00CC;">{total_orders:,}</p></div>', unsafe_allow_html=True)
+with col4:
+    st.markdown(f'<div class="glass"><p style="margin:0;color:#aaa;">PROFIT MARGIN</p><p class="metric-value" style="color:#FFD700;">{profit_margin:.1f}%</p></div>', unsafe_allow_html=True)
+with col5:
+    st.markdown(f'<div class="glass"><p style="margin:0;color:#aaa;">HEALTH SCORE</p><p class="metric-value" style="color:#00FFAA;">{health_score}/100</p></div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-    colA, colB, colC = st.columns(3)
-    with colA: st.metric("🌎 Top Region", top_region)
-    with colB: st.metric("📦 Top Category", top_category)
-    with colC: st.metric("🧠 Health Score", f"{health_score}/100")
+st.markdown("---")
 
-with tab2:
-    # All your charts here (I kept the best ones)
-    st.plotly_chart(px.line(filtered_df.groupby("YearMonth")["Sales"].sum().reset_index(), 
-                           x="YearMonth", y="Sales", title="Revenue Trend"), use_container_width=True)
-    
-    c1, c2 = st.columns(2)
-    with c1:
-        st.plotly_chart(px.pie(filtered_df.groupby("Category")["Sales"].sum().reset_index(), 
-                              names="Category", values="Sales", hole=0.6), use_container_width=True)
-    with c2:
-        st.plotly_chart(px.bar(filtered_df.groupby("Region")["Sales"].sum().reset_index().sort_values("Sales", ascending=True), 
-                              x="Sales", y="Region", orientation='h'), use_container_width=True)
+# ====================== CHARTS ======================
+colA, colB = st.columns([2,1])
 
-with tab3:
-    st.subheader("🔮 AI Revenue Forecasting")
-    # Linear Regression Forecast (kept + improved)
-    forecast_df = filtered_df.groupby("YearMonth")["Sales"].sum().reset_index()
-    forecast_df["Month_No"] = range(1, len(forecast_df)+1)
-    model = LinearRegression().fit(forecast_df[["Month_No"]], forecast_df["Sales"])
-    
-    future = np.arange(len(forecast_df)+1, len(forecast_df)+7).reshape(-1,1)
-    pred = model.predict(future)
-    
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=forecast_df["Month_No"], y=forecast_df["Sales"], name="Actual"))
-    fig.add_trace(go.Scatter(x=future.flatten(), y=pred, name="Forecast", line=dict(dash='dash')))
-    st.plotly_chart(fig, use_container_width=True)
+with colA:
+    monthly = filtered_df.groupby("YearMonth") .sum().reset_index()
+    fig1 = px.line(monthly, x="YearMonth", y="Sales", title="📈 Revenue Trend", markers=True,
+                   color_discrete_sequence= )
+    fig1.update_layout(height=420, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+    st.plotly_chart(fig1, use_container_width=True)
 
-with tab4:
-    st.subheader("🧠 Advanced AI Insights")
-    # KMeans Clustering
-    if len(filtered_df) > 10:
-        features = filtered_df[["Sales", "Profit", "Quantity"]].fillna(0)
-        scaler = StandardScaler()
-        scaled = scaler.fit_transform(features)
-        kmeans = KMeans(n_clusters=3, random_state=42).fit(scaled)
-        filtered_df["Cluster"] = kmeans.labels_
-        
-        st.plotly_chart(px.scatter(filtered_df, x="Sales", y="Profit", color="Cluster", 
-                                  hover_data=["Product"], title="Customer/Product Segmentation"), use_container_width=True)
+with colB:
+    pie = filtered_df.groupby("Category") .sum().reset_index()
+    fig2 = px.pie(pie, names="Category", values="Sales", hole=0.65, title="Revenue by Category")
+    fig2.update_layout(height=420, paper_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
+    st.plotly_chart(fig2, use_container_width=True)
 
-with tab5:
-    st.subheader("📄 Generate Executive Report")
-    if st.button("📥 Download PDF Report"):
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4)
-        styles = getSampleStyleSheet()
-        story = []
-        story.append(Paragraph("INSIGHT IQ AI COPILOT - Executive Report", styles['Title']))
-        story.append(Spacer(1, 12))
-        story.append(Paragraph(f"Generated on: {datetime.now().strftime('%d %B %Y')}", styles['Normal']))
-        # Add more content...
-        doc.build(story)
-        buffer.seek(0)
-        st.download_button("Download Report", buffer, "Executive_Report.pdf", "application/pdf")
+st.markdown("---")
 
-st.sidebar.success("Made with ❤️ by Khushi Tamre")
+colC, colD = st.columns(2)
+with colC:
+    fig3 = px.bar(filtered_df.groupby("Region") .sum().reset_index(), 
+                  x="Region", y="Sales", title="Revenue by Region", color_discrete_sequence= )
+    st.plotly_chart(fig3, use_container_width=True)
+
+with colD:
+    fig4 = px.scatter(filtered_df.sample(min(800, len(filtered_df))), x="Sales", y="Profit", 
+                      color="Category", size="Quantity", title="Sales vs Profit Analysis")
+    st.plotly_chart(fig4, use_container_width=True)
+
+st.markdown("---")
+st.success("🚀 Project Built by **Khushi Tamre** • Final Year AI & BI Project")
