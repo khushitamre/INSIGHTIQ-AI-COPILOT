@@ -63,16 +63,19 @@ const topProducts = [
 ];
 
 # // ─── HELPERS ─────────────────────────────────────────────────────────────────
-const fmt = (n) => 
- n >= 1e7
-  ? ₹${(n / 1e7).toFixed(2)}Cr 
-  : n >= 1e5
-  ? ₹${(n / 1e5).toFixed(1)}L 
-  : ₹${n.toLocaleString()}; 
+def fmt(n):
+    if n >= 1e7:
+        return f"₹{n/1e7:.2f}Cr"
+    elif n >= 1e5:
+        return f"₹{n/1e5:.1f}L"
+    else:
+        return f"₹{n:,.0f}"
 
-const fmtShort = (n) => 
- n >= 1e6 ? ₹${(n / 1e6).toFixed(1)}M : ₹${(n / 
-1000).toFixed(0)}K;
+def fmt_short(n):
+    if n >= 1e6:
+        return f"₹{n/1e6:.1f}M"
+    else:
+        return f"₹{n/1000:.0f}K"
 
 # // ─── ANIMATED NUMBER ─────────────────────────────────────────────────────────
 
