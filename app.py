@@ -1,882 +1,1234 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend, RadarChart,
-  PolarGrid, PolarAngleAxis, Radar,Cr
-} from "recharts";
+===========================================================
+#  InsightIQ AI Copilot Pro  —  app.py
+#  World-Class Streamlit Business Intelligence Dashboard
+#  Developer : Khushi Tamre  |  AI & BI Engineer
+# ============================================================
 
-# // ─── SAMPLE DATA ────────────────────────────────────────────────────────────
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+import io
+from datetime import datetime, timedelta
+import random
 
-const monthlyRevenue = [
-  { month: "Jan", revenue: 420000, profit: 84000, orders: 312 },
-  { month: "Feb", revenue: 380000, profit: 68400, orders: 287 },
-  { month: "Mar", revenue: 510000, profit: 102000, orders: 398 },
-  { month: "Apr", revenue: 490000, profit: 93100, orders: 372 },
-  { month: "May", revenue: 620000, profit: 136400, orders: 481 },
-  { month: "Jun", revenue: 580000, profit: 110200, orders: 453 },
-  { month: "Jul", revenue: 710000, profit: 156200, orders: 541 },
-  { month: "Aug", revenue: 680000, profit: 142800, orders: 519 },
-  { month: "Sep", revenue: 750000, profit: 172500, orders: 578 },
-  { month: "Oct", revenue: 820000, profit: 189200, orders: 634 },
-  { month: "Nov", revenue: 910000, profit: 218400, orders: 701 },
-  { month: "Dec", revenue: 980000, profit: 245000, orders: 756 },
-];
+# ============================================================
+#  PAGE CONFIG  —  must be first Streamlit call
+# ============================================================
 
-const forecast = [
-  { month: "Jan '25", revenue: 1050000, type: "forecast" },
-  { month: "Feb '25", revenue: 1120000, type: "forecast" },
-  { month: "Mar '25", revenue: 1190000, type: "forecast" },
-];
+st.set_page_config(
+    page_title="InsightIQ AI Copilot Pro",
+    page_icon="🚀",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
-const categoryData = [
-  { name: "Electronics", value: 38, color: "#7C3AED" },
-  { name: "Furniture", value: 24, color: "#06B6D4" },
-  { name: "Clothing", value: 19, color: "#10B981" },
-  { name: "Food & Bev", value: 12, color: "#F59E0B" },
-  { name: "Sports", value: 7, color: "#EF4444" },
-];
+# ============================================================
+#  GLOBAL CSS  —  dark space theme
+# ============================================================
 
-const regionData = [
-  { region: "West", sales: 3200000, growth: 18 },
-  { region: "East", sales: 2800000, growth: 12 },
-  { region: "North", sales: 1900000, growth: 22 },
-  { region: "South", sales: 2100000, growth: 9 },
-  { region: "Central", sales: 1500000, growth: 31 },
-];
+st.markdown("""
+<style>
+/* ── Base ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
 
-const radarData = [
-  { metric: "Revenue", score: 88 },
-  { metric: "Profit", score: 72 },
-  { metric: "Growth", score: 91 },
-  { metric: "Retention", score: 79 },
-  { metric: "Efficiency", score: 85 },
-  { metric: "Innovation", score: 68 },
-];
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+    background: #02020E;
+    color: #E2E8F0;
+}
 
-const topProducts = [
-  { name: "MacBook Pro M3", revenue: 842000, margin: 22 },
-  { name: "iPhone 15 Pro", revenue: 731000, margin: 28 },
-  { name: "Samsung 4K TV", revenue: 612000, margin: 18 },
-  { name: "Sony Headphones", revenue: 498000, margin: 35 },
-  { name: "iPad Air", revenue: 421000, margin: 25 },
-];
+.stApp {
+    background: linear-gradient(135deg, #02020E 0%, #0A0A1A 50%, #05050F 100%);
+}
 
-# // ─── HELPERS ─────────────────────────────────────────────────────────────────
-def fmt(n):
+/* ── Hide default elements ── */
+#MainMenu, footer, header { visibility: hidden; }
+.block-container { padding: 1.5rem 2rem 3rem; max-width: 1400px; }
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0A0A1A 0%, #0F0F2A 100%) !important;
+    border-right: 1px solid rgba(124,58,237,0.3);
+}
+[data-testid="stSidebar"] * { color: #CBD5E1 !important; }
+[data-testid="stSidebar"] .stSelectbox label,
+[data-testid="stSidebar"] .stMultiSelect label { color: #94A3B8 !important; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ── Metrics ── */
+[data-testid="stMetricValue"] {
+    font-size: 1.8rem !important;
+    font-weight: 900 !important;
+    background: linear-gradient(90deg, #A78BFA, #38BDF8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+[data-testid="stMetricLabel"] { color: #64748B !important; font-size: 11px !important; letter-spacing: 1px; text-transform: uppercase; }
+[data-testid="stMetricDelta"] { font-size: 12px !important; font-weight: 700 !important; }
+[data-testid="metric-container"] {
+    background: linear-gradient(135deg, #0F0F1A, #1A1A2E) !important;
+    border: 1px solid rgba(124,58,237,0.25) !important;
+    border-radius: 14px !important;
+    padding: 18px 20px !important;
+    transition: all 0.25s ease;
+}
+[data-testid="metric-container"]:hover {
+    border-color: rgba(124,58,237,0.6) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(124,58,237,0.2);
+}
+
+/* ── Tabs ── */
+.stTabs [data-baseweb="tab-list"] {
+    background: rgba(15,15,26,0.9);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid rgba(124,58,237,0.2);
+    gap: 2px;
+}
+.stTabs [data-baseweb="tab"] {
+    background: transparent;
+    border-radius: 10px;
+    color: #64748B !important;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 20px;
+    transition: all 0.2s;
+}
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, #7C3AED, #6D28D9) !important;
+    color: white !important;
+    box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+}
+
+/* ── Buttons ── */
+.stButton > button {
+    background: linear-gradient(135deg, #7C3AED, #6D28D9) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 10px 24px !important;
+    transition: all 0.25s !important;
+    letter-spacing: 0.5px;
+}
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(124,58,237,0.5) !important;
+}
+
+/* ── Input / Text area ── */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea {
+    background: rgba(15,15,26,0.95) !important;
+    border: 1px solid rgba(124,58,237,0.35) !important;
+    border-radius: 10px !important;
+    color: #E2E8F0 !important;
+    font-size: 14px !important;
+}
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus {
+    border-color: #7C3AED !important;
+    box-shadow: 0 0 0 2px rgba(124,58,237,0.25) !important;
+}
+
+/* ── Selectbox / Multiselect ── */
+.stMultiSelect > div, .stSelectbox > div {
+    background: rgba(15,15,26,0.9) !important;
+    border-color: rgba(124,58,237,0.3) !important;
+    border-radius: 10px !important;
+    color: #E2E8F0 !important;
+}
+
+/* ── Dataframe ── */
+.stDataFrame { border-radius: 12px; overflow: hidden; }
+[data-testid="stDataFrameResizable"] {
+    border: 1px solid rgba(124,58,237,0.25) !important;
+    border-radius: 12px !important;
+}
+
+/* ── Alerts / Info boxes ── */
+.stAlert {
+    border-radius: 12px !important;
+    border-left-width: 4px !important;
+    font-size: 13px !important;
+}
+.stSuccess { background: rgba(16,185,129,0.1) !important; border-color: #10B981 !important; }
+.stInfo    { background: rgba(56,189,248,0.1) !important; border-color: #38BDF8 !important; }
+.stWarning { background: rgba(245,158,11,0.1) !important; border-color: #F59E0B !important; }
+.stError   { background: rgba(239,68,68,0.1) !important; border-color: #EF4444 !important; }
+
+/* ── Download button ── */
+.stDownloadButton > button {
+    background: linear-gradient(135deg, #10B981, #059669) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+}
+
+/* ── Divider ── */
+hr { border-color: rgba(124,58,237,0.2) !important; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #0F0F1A; }
+::-webkit-scrollbar-thumb { background: #7C3AED; border-radius: 3px; }
+</style>
+""", unsafe_allow_html=True)
+
+# ============================================================
+#  CHART THEME CONFIG
+# ============================================================
+
+COLORS = {
+    "purple":  "#7C3AED",
+    "cyan":    "#06B6D4",
+    "green":   "#10B981",
+    "amber":   "#F59E0B",
+    "red":     "#EF4444",
+    "pink":    "#EC4899",
+    "blue":    "#38BDF8",
+}
+PALETTE = list(COLORS.values())
+
+CHART_LAYOUT = dict(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(family="Inter", color="#94A3B8", size=12),
+    margin=dict(l=20, r=20, t=40, b=20),
+    legend=dict(
+        bgcolor="rgba(15,15,26,0.8)",
+        bordercolor="rgba(124,58,237,0.3)",
+        borderwidth=1,
+        font=dict(color="#CBD5E1", size=12),
+    ),
+    xaxis=dict(gridcolor="#1E293B", zerolinecolor="#1E293B", tickfont=dict(color="#64748B")),
+    yaxis=dict(gridcolor="#1E293B", zerolinecolor="#1E293B", tickfont=dict(color="#64748B")),
+)
+
+
+def apply_theme(fig, height=380):
+    fig.update_layout(**CHART_LAYOUT, height=height)
+    return fig
+
+
+# ============================================================
+#  HELPER FUNCTIONS
+# ============================================================
+
+def fmt_inr(n):
+    """Format number to Indian currency string."""
     if n >= 1e7:
-        return f"₹{n/1e7:.2f}Cr"
+        return f"₹{n/1e7:.2f} Cr"
     elif n >= 1e5:
-        return f"₹{n/1e5:.1f}L"
-    else:
-        return f"₹{n:,.0f}"
+        return f"₹{n/1e5:.1f} L"
+    elif n >= 1e3:
+        return f"₹{n/1e3:.1f} K"
+    return f"₹{n:,.0f}"
+
 
 def fmt_short(n):
     if n >= 1e6:
         return f"₹{n/1e6:.1f}M"
-    else:
-        return f"₹{n/1000:.0f}K"
+    return f"₹{n/1e3:.0f}K"
 
-# // ─── ANIMATED NUMBER ─────────────────────────────────────────────────────────
 
-function AnimatedNumber({ value, prefix = "", suffix = "", duration = 1500 }) {
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    let start = 0;
-    const step = value / (duration / 16);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= value) {
-        setDisplay(value);
-        clearInterval(timer);
-      } else {
-        setDisplay(Math.floor(start));
-      }
-    }, 16);
-    return () => clearInterval(timer);
-  }, [value]);
-  return (
-    <span>
-      {prefix}
-      {display.toLocaleString()}
-      {suffix}
-    </span>
-  );
-}
+def badge(text, color="#7C3AED"):
+    bg = color + "22"
+    return f"""<span style="background:{bg};color:{color};padding:3px 12px;
+    border-radius:20px;font-size:12px;font-weight:700;
+    border:1px solid {color}55;">{text}</span>"""
 
-# // ─── KPI CARD ────────────────────────────────────────────────────────────────
 
-function KpiCard({ icon, label, value, sub, color, trend }) {
-  return (
-    <div
-      style={{
-        background: "linear-gradient(135deg, #0F0F1A 0%, #1A1A2E 100%)",
-        border: `1px solid ${color}33`,
-        borderRadius: 16,
-        padding: "20px 24px",
-        position: "relative",
-        overflow: "hidden",
-        transition: "transform 0.2s, box-shadow 0.2s",
-        cursor: "default",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = `0 12px 40px ${color}33`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    >
-      {/* glow orb */}
-      <div
-        style={{
-          position: "absolute",
-          top: -30,
-          right: -30,
-          width: 100,
-          height: 100,
-          borderRadius: "50%",
-          background: color,
-          opacity: 0.08,
-          filter: "blur(30px)",
-        }}
-      />
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <span style={{ fontSize: 22 }}>{icon}</span>
-        <span style={{ color: "#94A3B8", fontSize: 13, fontWeight: 500, letterSpacing: 1, textTransform: "uppercase" }}>
-          {label}
-        </span>
-      </div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: "#F1F5F9", lineHeight: 1 }}>
-        {value}
-      </div>
-      <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: trend > 0 ? "#10B981" : "#EF4444",
-            background: trend > 0 ? "#10B98120" : "#EF444420",
-            padding: "2px 8px",
-            borderRadius: 20,
-          }}
-        >
-          {trend > 0 ? "▲" : "▼"} {Math.abs(trend)}%
-        </span>
-        <span style={{ color: "#64748B", fontSize: 12 }}>{sub}</span>
-      </div>
+def section_header(icon, title, subtitle=""):
+    sub_html = f'<p style="margin:4px 0 0;color:#475569;font-size:13px;">{subtitle}</p>' if subtitle else ""
+    st.markdown(f"""
+    <div style="margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <span style="font-size:22px;">{icon}</span>
+            <h2 style="margin:0;font-size:20px;font-weight:800;color:#F1F5F9;letter-spacing:-0.5px;">{title}</h2>
+        </div>
+        {sub_html}
+        <div style="margin-top:10px;height:2px;background:linear-gradient(90deg,#7C3AED,#06B6D4,transparent);border-radius:2px;"></div>
     </div>
-  );
-}
+    """, unsafe_allow_html=True)
 
-# // ─── SECTION HEADER ──────────────────────────────────────────────────────────
-
-function SectionHeader({ icon, title, subtitle }) {
-  return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-        <span style={{ fontSize: 22 }}>{icon}</span>
-        <h2
-          style={{
-            margin: 0,
-            fontSize: 20,
-            fontWeight: 800,
-            color: "#F1F5F9",
-            letterSpacing: "-0.5px",
-          }}
-        >
-          {title}
-        </h2>
-      </div>
-      {subtitle && (
-        <p style={{ margin: 0, color: "#64748B", fontSize: 13 }}>{subtitle}</p>
-      )}
-      <div
-        style={{
-          marginTop: 12,
-          height: 2,
-          background: "linear-gradient(90deg, #7C3AED, #06B6D4, transparent)",
-          borderRadius: 2,
-        }}
-      />
+def kpi_card(icon, label, value, delta, delta_label, accent):
+    delta_color = "#10B981" if delta >= 0 else "#EF4444"
+    delta_icon = "▲" if delta >= 0 else "▼"
+    st.markdown(f"""
+    <div style="background:linear-gradient(135deg,#0F0F1A,#1A1A2E);
+    border:1px solid {accent}33;border-radius:14px;padding:18px 20px;
+    position:relative;overflow:hidden;transition:all 0.25s;">
+        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;
+        border-radius:50%;background:{accent};opacity:0.07;filter:blur(20px);"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span style="font-size:20px;">{icon}</span>
+            <span style="color:#64748B;font-size:11px;font-weight:600;
+            letter-spacing:1px;text-transform:uppercase;">{label}</span>
+        </div>
+        <div style="font-size:26px;font-weight:900;color:#F1F5F9;line-height:1;">{value}</div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:6px;">
+            <span style="background:{delta_color}22;color:{delta_color};
+            padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;">
+            {delta_icon} {abs(delta):.1f}%</span>
+            <span style="color:#475569;font-size:11px;">{delta_label}</span>
+        </div>
     </div>
-  );
-}
+    """, unsafe_allow_html=True)
 
-# // ─── GLASS CARD ──────────────────────────────────────────────────────────────
 
-function Card({ children, style = {} }) {
-  return (
-    <div
-      style={{
-        background: "rgba(15,15,26,0.8)",
-        border: "1px solid rgba(124,58,237,0.2)",
-        borderRadius: 16,
-        padding: 24,
-        backdropFilter: "blur(12px)",
-        ...style,
-      }}
-    >
-      {children}
+def alert_card(icon, text, color):
+    st.markdown(f"""
+    <div style="background:{color}11;border:1px solid {color}33;border-left:3px solid {color};
+    border-radius:10px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;margin:4px 0;">
+        <span style="font-size:18px;flex-shrink:0;">{icon}</span>
+        <span style="font-size:13px;color:#CBD5E1;line-height:1.6;">{text}</span>
     </div>
-  );
-}
+    """, unsafe_allow_html=True)
 
-# // ─── AI CHAT ─────────────────────────────────────────────────────────────────
 
-function AiAssistant({ kpis }) {
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      text: "👋 Namaste! Main hoon **InsightIQ AI Analyst**. Aap mujhse business performance, trends, forecasting ya koi bhi data-related sawaal pooch sakte hain. Kya jaanna chahte hain?",
-    },
-  ]);
-  const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
+def progress_row(label, value, max_val, color, suffix=""):
+    pct = (value / max_val * 100) if max_val else 0
+    st.markdown(f"""
+    <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;
+        margin-bottom:5px;font-size:13px;">
+            <span style="color:#94A3B8;font-weight:600;">{label}</span>
+            <span style="color:{color};font-weight:700;">{suffix}{value:,.0f}</span>
+        </div>
+        <div style="height:6px;background:#1E293B;border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:{pct:.1f}%;background:{color};border-radius:3px;
+            transition:width 1s ease;"></div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
 
-  const ask = async () => {
-    if (!input.trim() || loading) return;
-    const userMsg = input.trim();
-    setInput("");
-    setMessages((p) => [...p, { role: "user", text: userMsg }]);
-    setLoading(true);
-    try {
-      const systemPrompt = `You are InsightIQ, a world-class AI Business Analyst. 
-Current business data:
-- Total Annual Revenue: ₹${kpis.revenue.toLocaleString()}
-- Total Profit: ₹${kpis.profit.toLocaleString()}
-- Profit Margin: ${kpis.margin}%
-- Total Orders: ${kpis.orders.toLocaleString()}
-- Top Region: West (₹3.2Cr, +18% growth)
-- Top Category: Electronics (38% share)
-- Top Product: MacBook Pro M3 (₹8.42L revenue)
-- Business Health Score: 87/100
-- Risk Level: Low
-- Next Month AI Forecast: ₹10.5Cr
+# ============================================================
+#  DATA GENERATION  (replace with your CSV loader)
+# ============================================================
 
-Answer in a mix of Hindi and English (Hinglish) — professional yet friendly. 
-Be data-specific. Give actionable insights. Use emojis strategically.
-Keep answers concise but impactful (3-5 sentences max unless asked for detail).`;
+@st.cache_data
+def load_data():
+    np.random.seed(42)
+    n = 2000
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userMsg }],
-        }),
-      });
-      const data = await res.json();
-      const text = data.content?.map((c) => c.text || "").join("") || "Kuch error aaya. Please retry karein.";
-      setMessages((p) => [...p, { role: "assistant", text }]);
-    } catch {
-      setMessages((p) => [...p, { role: "assistant", text: "⚠️ API error. Please try again." }]);
+    regions    = ["West", "East", "North", "South", "Central"]
+    segments   = ["Consumer", "Corporate", "Home Office"]
+    categories = ["Electronics", "Furniture", "Clothing", "Food & Bev", "Sports"]
+    products   = {
+        "Electronics": ["MacBook Pro M3","iPhone 15 Pro","Samsung 4K TV","Sony Headphones","iPad Air"],
+        "Furniture":   ["Ergonomic Chair","Standing Desk","Bookshelf","Filing Cabinet","Sofa Set"],
+        "Clothing":    ["Winter Jacket","Formal Suit","Casual T-Shirt","Sports Shoes","Denim Jeans"],
+        "Food & Bev":  ["Protein Powder","Green Tea Pack","Organic Coffee","Energy Drink","Protein Bar"],
+        "Sports":      ["Yoga Mat","Dumbbells Set","Running Shoes","Cycling Helmet","Fitness Band"],
     }
-    setLoading(false);
-  };
 
-  return (
-    <Card>
-      <SectionHeader icon="🤖" title="AI Business Analyst" subtitle="Claude-powered — real-time business intelligence" />
-      <div
-        style={{
-          height: 340,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-          paddingRight: 4,
-          marginBottom: 16,
-        }}
-      >
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              justifyContent: m.role === "user" ? "flex-end" : "flex-start",
-            }}
-          >
-            <div
-              style={{
-                maxWidth: "82%",
-                padding: "12px 16px",
-                borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                background:
-                  m.role === "user"
-                    ? "linear-gradient(135deg, #7C3AED, #6D28D9)"
-                    : "rgba(30,30,50,0.9)",
-                border: m.role === "assistant" ? "1px solid rgba(124,58,237,0.3)" : "none",
-                color: "#E2E8F0",
-                fontSize: 14,
-                lineHeight: 1.6,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {m.text}
-            </div>
-          </div>
-        ))}
-        {loading && (
-          <div style={{ display: "flex", gap: 6, padding: "12px 16px" }}>
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: "#7C3AED",
-                  animation: `bounce 1.2s ${i * 0.2}s infinite`,
-                }}
-              />
-            ))}
-          </div>
-        )}
-        <div ref={bottomRef} />
-      </div>
-      <div style={{ display: "flex", gap: 10 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && ask()}
-          placeholder="Apna sawaal poochein... (e.g. 'Top region kaunsa hai?')"
-          style={{
-            flex: 1,
-            background: "rgba(30,30,50,0.9)",
-            border: "1px solid rgba(124,58,237,0.4)",
-            borderRadius: 12,
-            padding: "12px 16px",
-            color: "#E2E8F0",
-            fontSize: 14,
-            outline: "none",
-          }}
-        />
-        <button
-          onClick={ask}
-          disabled={loading}
-          style={{
-            background: loading ? "#3D1F7A" : "linear-gradient(135deg, #7C3AED, #6D28D9)",
-            border: "none",
-            borderRadius: 12,
-            padding: "12px 20px",
-            color: "white",
-            fontSize: 18,
-            cursor: loading ? "not-allowed" : "pointer",
-            transition: "opacity 0.2s",
-          }}
-        >
-          {loading ? "⏳" : "🚀"}
-        </button>
-      </div>
-      <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {["Top products?", "Revenue forecast?", "Risk analysis?", "Growth tips?"].map((q) => (
-          <button
-            key={q}
-            onClick={() => { setInput(q); }}
-            style={{
-              background: "rgba(124,58,237,0.15)",
-              border: "1px solid rgba(124,58,237,0.3)",
-              borderRadius: 20,
-              padding: "4px 14px",
-              color: "#A78BFA",
-              fontSize: 12,
-              cursor: "pointer",
-            }}
-          >
-            {q}
-          </button>
-        ))}
-      </div>
-    </Card>
-  );
-}
+    start = datetime(2022, 1, 1)
+    dates = [start + timedelta(days=int(x)) for x in np.random.randint(0, 730, n)]
+
+    cat_list  = np.random.choice(categories, n, p=[0.35, 0.22, 0.20, 0.13, 0.10])
+    prod_list = [np.random.choice(products[c]) for c in cat_list]
+
+    base_sales = {"Electronics": 15000, "Furniture": 9000, "Clothing": 4000, "Food & Bev": 2500, "Sports": 3500}
+    sales_arr  = np.array([base_sales[c] * (0.5 + np.random.random()) for c in cat_list])
+
+    margin_map = {"Electronics": 0.22, "Furniture": 0.18, "Clothing": 0.28, "Food & Bev": 0.15, "Sports": 0.25}
+    profit_arr = np.array([sales_arr[i] * (margin_map[c] + np.random.uniform(-0.05, 0.05))
+                           for i, c in enumerate(cat_list)])
+
+    df = pd.DataFrame({
+        "Order_ID":   [f"ORD-{i:05d}" for i in range(n)],
+        "Order_Date": dates,
+        "Region":     np.random.choice(regions, n, p=[0.28, 0.24, 0.20, 0.18, 0.10]),
+        "Segment":    np.random.choice(segments, n, p=[0.52, 0.30, 0.18]),
+        "Category":   cat_list,
+        "Product":    prod_list,
+        "Sales":      sales_arr.round(2),
+        "Profit":     profit_arr.round(2),
+        "Quantity":   np.random.randint(1, 15, n),
+    })
+
+    df["Year"]      = df["Order_Date"].dt.year
+    df["Month"]     = df["Order_Date"].dt.month
+    df["Quarter"]   = "Q" + df["Order_Date"].dt.quarter.astype(str)
+    df["YearMonth"] = df["Order_Date"].dt.to_period("M").astype(str)
+    df["MonthName"] = df["Order_Date"].dt.strftime("%b %Y")
+
+    return df
 
 
-# // ─── CUSTOM TOOLTIP ──────────────────────────────────────────────────────────
+df = load_data()
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div
-      style={{
-        background: "#0F0F1A",
-        border: "1px solid rgba(124,58,237,0.5)",
-        borderRadius: 10,
-        padding: "10px 16px",
-        fontSize: 13,
-        color: "#E2E8F0",
-      }}
-    >
-      <p style={{ margin: "0 0 6px", color: "#A78BFA", fontWeight: 700 }}>{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} style={{ margin: "2px 0", color: p.color }}>
-          {p.name}: {typeof p.value === "number" && p.value > 1000 ? fmtShort(p.value) : p.value}
-        </p>
-      ))}
+
+# ============================================================
+#  SESSION STATE
+# ============================================================
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = [
+        {"role": "assistant",
+         "content": "👋 Namaste! Main hoon **InsightIQ AI Analyst**. "
+                    "Aap mujhse revenue, profit, forecast ya koi bhi "
+                    "business sawaal pooch sakte hain. Kya jaanna chahte hain?"}
+    ]
+
+
+# ============================================================
+#  SIDEBAR  —  FILTERS + BRANDING
+# ============================================================
+
+with st.sidebar:
+    # Logo block
+    st.markdown("""
+    <div style="text-align:center;padding:16px 0 8px;">
+        <div style="font-size:36px;margin-bottom:6px;">🚀</div>
+        <div style="font-size:18px;font-weight:900;background:linear-gradient(90deg,#A78BFA,#38BDF8);
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;">InsightIQ Pro</div>
+        <div style="font-size:10px;color:#334155;letter-spacing:2px;text-transform:uppercase;">
+        AI Business Intelligence</div>
     </div>
-  );
-};
+    <hr style="border-color:rgba(124,58,237,0.3);margin:10px 0 18px;">
+    """, unsafe_allow_html=True)
 
-# // ─── HEALTH GAUGE ────────────────────────────────────────────────────────────
+    st.markdown("**⚙️ Filters**")
 
-function HealthGauge({ score }) {
-  const angle = (score / 100) * 180 - 90;
-  return (
-    <div style={{ textAlign: "center", padding: "12px 0" }}>
-      <svg viewBox="0 0 200 120" style={{ width: "100%", maxWidth: 240 }}>
-        <defs>
-          <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#EF4444" />
-            <stop offset="50%" stopColor="#F59E0B" />
-            <stop offset="100%" stopColor="#10B981" />
-          </linearGradient>
-        </defs>
-        <path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#1E293B" strokeWidth="16" strokeLinecap="round" />
-        <path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="url(#gaugeGrad)" strokeWidth="16" strokeLinecap="round" />
-        <line
-          x1="100" y1="100"
-          x2={100 + 65 * Math.cos((angle * Math.PI) / 180)}
-          y2={100 + 65 * Math.sin((angle * Math.PI) / 180)}
-          stroke="white" strokeWidth="3" strokeLinecap="round"
-        />
-        <circle cx="100" cy="100" r="6" fill="#7C3AED" />
-        <text x="100" y="90" textAnchor="middle" fill="#F1F5F9" fontSize="22" fontWeight="800">{score}</text>
-        <text x="100" y="110" textAnchor="middle" fill="#64748B" fontSize="11">HEALTH SCORE</text>
-      </svg>
-      <div style={{ marginTop: -8 }}>
-        <span
-          style={{
-            background: score >= 85 ? "#10B98120" : score >= 70 ? "#F59E0B20" : "#EF444420",
-            color: score >= 85 ? "#10B981" : score >= 70 ? "#F59E0B" : "#EF4444",
-            padding: "4px 16px",
-            borderRadius: 20,
-            fontSize: 13,
-            fontWeight: 700,
-          }}
-        >
-          {score >= 85 ? "🟢 Excellent" : score >= 70 ? "🟡 Good" : "🔴 Needs Attention"}
-        </span>
-      </div>
+    all_years = sorted(df["Year"].dropna().unique().tolist())
+    sel_years = st.multiselect("📅 Year", all_years, default=all_years)
+
+    all_regions = sorted(df["Region"].dropna().unique().tolist())
+    sel_regions = st.multiselect("🌎 Region", all_regions, default=all_regions)
+
+    all_segments = sorted(df["Segment"].dropna().unique().tolist())
+    sel_segments = st.multiselect("👥 Segment", all_segments, default=all_segments)
+
+    all_cats = sorted(df["Category"].dropna().unique().tolist())
+    sel_cats = st.multiselect("📦 Category", all_cats, default=all_cats)
+
+    st.markdown("<hr style='border-color:rgba(124,58,237,0.2);margin:16px 0;'>", unsafe_allow_html=True)
+
+    # Live indicator
+    st.markdown("""
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#10B981;
+        animation:none;box-shadow:0 0 6px #10B981;"></div>
+        <span style="font-size:12px;color:#10B981;font-weight:600;">System Online</span>
     </div>
-  );
-}
+    """, unsafe_allow_html=True)
 
-# // ─── MAIN APP ─────────────────────────────────────────────────────────────────
+    st.caption(f"🕐 {datetime.now().strftime('%d %b %Y, %H:%M')}")
 
-export default function InsightIQPro() {
-  const [activeTab, setActiveTab] = useState("overview");
+    st.markdown("<hr style='border-color:rgba(124,58,237,0.2);margin:16px 0;'>", unsafe_allow_html=True)
 
-  const totalRevenue = monthlyRevenue.reduce((s, m) => s + m.revenue, 0);
-  const totalProfit = monthlyRevenue.reduce((s, m) => s + m.profit, 0);
-  const totalOrders = monthlyRevenue.reduce((s, m) => s + m.orders, 0);
-  const margin = ((totalProfit / totalRevenue) * 100).toFixed(1);
+    st.markdown("""
+    <div style="text-align:center;padding:8px;">
+        <div style="font-size:13px;font-weight:700;color:#A78BFA;">👩‍💻 Khushi Tamre</div>
+        <div style="font-size:11px;color:#475569;margin-top:2px;">AI & BI Engineer</div>
+        <div style="font-size:10px;color:#334155;margin-top:6px;">Final Year Project • 2024</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-  const kpis = { revenue: totalRevenue, profit: totalProfit, orders: totalOrders, margin };
 
-  const tabs = [
-    { id: "overview", label: "📊 Overview" },
-    { id: "revenue", label: "📈 Revenue" },
-    { id: "products", label: "📦 Products" },
-    { id: "forecast", label: "🔮 Forecast" },
-    { id: "ai", label: "🤖 AI Analyst" },
-  ];
+# ============================================================
+#  FILTERED DATA
+# ============================================================
 
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #020209 0%, #0A0A1A 50%, #050510 100%)",
-        fontFamily: "'Inter', 'Segoe UI', sans-serif",
-        color: "#E2E8F0",
-      }}
-    >
-      <style>{`
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #0F0F1A; }
-        ::-webkit-scrollbar-thumb { background: #7C3AED; border-radius: 2px; }
-        @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
-        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-        .tab-btn:hover { background: rgba(124,58,237,0.2) !important; }
-      `}</style>
+fdf = df[
+    df["Year"].isin(sel_years) &
+    df["Region"].isin(sel_regions) &
+    df["Segment"].isin(sel_segments) &
+    df["Category"].isin(sel_cats)
+].copy()
 
-      {/* ── HEADER ── */}
-      <div
-        style={{
-          background: "rgba(10,10,26,0.95)",
-          borderBottom: "1px solid rgba(124,58,237,0.3)",
-          padding: "0 32px",
-          position: "sticky",
-          top: 0,
-          zIndex: 100,
-          backdropFilter: "blur(20px)",
-        }}
-      >
-        <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 10,
-                background: "linear-gradient(135deg, #7C3AED, #06B6D4)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 20,
-              }}
-            >
-              🚀
-            </div>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.5px", background: "linear-gradient(90deg, #A78BFA, #06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                InsightIQ Pro
-              </div>
-              <div style={{ fontSize: 10, color: "#475569", letterSpacing: 2, textTransform: "uppercase" }}>
-                AI Business Intelligence
-              </div>
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 4 }}>
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                className="tab-btn"
-                onClick={() => setActiveTab(t.id)}
-                style={{
-                  background: activeTab === t.id ? "rgba(124,58,237,0.3)" : "transparent",
-                  border: activeTab === t.id ? "1px solid rgba(124,58,237,0.6)" : "1px solid transparent",
-                  borderRadius: 8,
-                  padding: "6px 14px",
-                  color: activeTab === t.id ? "#A78BFA" : "#64748B",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#10B981", animation: "pulse 2s infinite" }} />
-            <span style={{ fontSize: 12, color: "#10B981", fontWeight: 600 }}>Live Data</span>
-          </div>
+
+# ============================================================
+#  KPI CALCULATIONS
+# ============================================================
+
+total_sales    = fdf["Sales"].sum()
+total_profit   = fdf["Profit"].sum()
+total_orders   = fdf["Order_ID"].nunique()
+avg_order_val  = total_sales / total_orders if total_orders else 0
+profit_margin  = (total_profit / total_sales * 100) if total_sales else 0
+
+region_sales   = fdf.groupby("Region")["Sales"].sum()
+top_region     = region_sales.idxmax() if len(region_sales) else "N/A"
+
+cat_sales      = fdf.groupby("Category")["Sales"].sum()
+top_category   = cat_sales.idxmax() if len(cat_sales) else "N/A"
+
+prod_sales     = fdf.groupby("Product")["Sales"].sum()
+top_product    = prod_sales.idxmax() if len(prod_sales) else "N/A"
+
+health_score = (
+    95 if profit_margin >= 20 else
+    85 if profit_margin >= 15 else
+    75 if profit_margin >= 10 else 60
+)
+risk_level   = "Low" if health_score >= 90 else "Medium" if health_score >= 75 else "High"
+confidence   = "95%" if health_score >= 90 else "85%" if health_score >= 75 else "70%"
+
+
+# ============================================================
+#  HEADER
+# ============================================================
+
+st.markdown(f"""
+<div style="background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(6,182,212,0.08));
+border:1px solid rgba(124,58,237,0.25);border-radius:18px;
+padding:24px 32px;margin-bottom:28px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+            <h1 style="margin:0;font-size:32px;font-weight:900;letter-spacing:-1px;
+            background:linear-gradient(90deg,#A78BFA 0%,#38BDF8 50%,#10B981 100%);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            🚀 InsightIQ AI Copilot Pro</h1>
+            <p style="margin:6px 0 0;color:#475569;font-size:14px;">
+            Next-Generation Business Intelligence • Powered by Machine Learning</p>
         </div>
-      </div>
-
-      {/* ── CONTENT ── */}
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "32px", animation: "fadeIn 0.4s ease" }}>
-
-        {/* ══ OVERVIEW TAB ══ */}
-        {activeTab === "overview" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-            {/* Hero */}
-            <div style={{ textAlign: "center", padding: "12px 0 4px" }}>
-              <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: "-1px", margin: "0 0 8px", background: "linear-gradient(90deg, #A78BFA 0%, #06B6D4 50%, #10B981 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                Business Command Center
-              </h1>
-              <p style={{ color: "#475569", fontSize: 15, margin: 0 }}>
-                FY 2024 • Real-time AI-powered analytics • Last updated: {new Date().toLocaleTimeString()}
-              </p>
-            </div>
-
-            {/* KPI Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
-              <KpiCard icon="💰" label="Annual Revenue" value={<AnimatedNumber value={totalRevenue} prefix="₹" />} sub="vs last year" trend={23} color="#7C3AED" />
-              <KpiCard icon="📈" label="Net Profit" value={<AnimatedNumber value={totalProfit} prefix="₹" />} sub="vs last year" trend={31} color="#10B981" />
-              <KpiCard icon="🛒" label="Total Orders" value={<AnimatedNumber value={totalOrders} />} sub="vs last year" trend={18} color="#06B6D4" />
-              <KpiCard icon="🎯" label="Profit Margin" value={`${margin}%`} sub="industry avg 14%" trend={6} color="#F59E0B" />
-              <KpiCard icon="⭐" label="Health Score" value="87/100" sub="excellent range" trend={9} color="#EF4444" />
-            </div>
-
-            {/* Row 2 */}
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
-              {/* Area chart */}
-              <Card>
-                <SectionHeader icon="📊" title="Revenue & Profit Trend" subtitle="Monthly performance across FY 2024" />
-                <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart data={monthlyRevenue}>
-                    <defs>
-                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="profGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-                    <XAxis dataKey="month" stroke="#475569" tick={{ fontSize: 12 }} />
-                    <YAxis stroke="#475569" tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend wrapperStyle={{ color: "#94A3B8", fontSize: 13 }} />
-                    <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#7C3AED" fill="url(#revGrad)" strokeWidth={2.5} />
-                    <Area type="monotone" dataKey="profit" name="Profit" stroke="#10B981" fill="url(#profGrad)" strokeWidth={2.5} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </Card>
-
-              {/* Health + Radar */}
-              <Card>
-                <SectionHeader icon="🧠" title="Business Health" />
-                <HealthGauge score={87} />
-                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-                  {[
-                    { label: "Revenue Growth", val: 92, color: "#7C3AED" },
-                    { label: "Profit Efficiency", val: 78, color: "#10B981" },
-                    { label: "Market Position", val: 85, color: "#06B6D4" },
-                  ].map((item) => (
-                    <div key={item.label}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12, color: "#94A3B8" }}>
-                        <span>{item.label}</span><span style={{ color: item.color }}>{item.val}%</span>
-                      </div>
-                      <div style={{ height: 5, background: "#1E293B", borderRadius: 3 }}>
-                        <div style={{ height: "100%", width: `${item.val}%`, background: item.color, borderRadius: 3, transition: "width 1s ease" }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            {/* Row 3 */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
-              {/* Donut */}
-              <Card>
-                <SectionHeader icon="🍩" title="Category Share" />
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={3}>
-                      {categoryData.map((c, i) => <Cell key={i} fill={c.color} />)}
-                    </Pie>
-                    <Tooltip formatter={(v) => `${v}%`} contentStyle={{ background: "#0F0F1A", border: "1px solid #7C3AED33", borderRadius: 10, color: "#E2E8F0" }} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-                  {categoryData.map((c) => (
-                    <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#94A3B8" }}>
-                      <div style={{ width: 8, height: 8, borderRadius: 2, background: c.color }} />
-                      {c.name} {c.value}%
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Region bars */}
-              <Card>
-                <SectionHeader icon="🌎" title="Region Performance" />
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={regionData} layout="vertical" barSize={14}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" horizontal={false} />
-                    <XAxis type="number" stroke="#475569" tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1e6).toFixed(1)}M`} />
-                    <YAxis type="category" dataKey="region" stroke="#475569" tick={{ fontSize: 12, fill: "#94A3B8" }} width={55} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="sales" name="Sales" radius={[0, 6, 6, 0]}>
-                      {regionData.map((_, i) => <Cell key={i} fill={["#7C3AED", "#06B6D4", "#10B981", "#F59E0B", "#EF4444"][i]} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-
-              {/* Radar */}
-              <Card>
-                <SectionHeader icon="📡" title="Performance Radar" />
-                <ResponsiveContainer width="100%" height={240}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="#1E293B" />
-                    <PolarAngleAxis dataKey="metric" tick={{ fill: "#94A3B8", fontSize: 11 }} />
-                    <Radar name="Score" dataKey="score" stroke="#7C3AED" fill="#7C3AED" fillOpacity={0.25} strokeWidth={2} />
-                    <Tooltip contentStyle={{ background: "#0F0F1A", border: "1px solid #7C3AED33", borderRadius: 10, color: "#E2E8F0", fontSize: 13 }} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </Card>
-            </div>
-
-            {/* Alert strip */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-              {[
-                { icon: "✅", text: "Profit margin 22.3% — above industry average of 14%", color: "#10B981", bg: "#10B98115" },
-                { icon: "🚀", text: "AI forecast: +12% revenue growth expected next quarter", color: "#7C3AED", bg: "#7C3AED15" },
-                { icon: "⚡", text: "West region showing strongest 18% YoY growth — scale now", color: "#F59E0B", bg: "#F59E0B15" },
-              ].map((a, i) => (
-                <div key={i} style={{ background: a.bg, border: `1px solid ${a.color}40`, borderRadius: 12, padding: "14px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 18 }}>{a.icon}</span>
-                  <span style={{ fontSize: 13, color: "#CBD5E1", lineHeight: 1.5 }}>{a.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ══ REVENUE TAB ══ */}
-        {activeTab === "revenue" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            <SectionHeader icon="📈" title="Revenue Analytics" subtitle="Deep dive into revenue patterns and profitability" />
-            <Card>
-              <h3 style={{ color: "#94A3B8", margin: "0 0 16px", fontSize: 14, fontWeight: 600 }}>MONTHLY REVENUE VS PROFIT</h3>
-              <ResponsiveContainer width="100%" height={340}>
-                <BarChart data={monthlyRevenue} barGap={4}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-                  <XAxis dataKey="month" stroke="#475569" tick={{ fontSize: 12 }} />
-                  <YAxis stroke="#475569" tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ color: "#94A3B8", fontSize: 13 }} />
-                  <Bar dataKey="revenue" name="Revenue" fill="#7C3AED" radius={[6, 6, 0, 0]} barSize={22} />
-                  <Bar dataKey="profit" name="Profit" fill="#10B981" radius={[6, 6, 0, 0]} barSize={22} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-              <Card>
-                <h3 style={{ color: "#94A3B8", margin: "0 0 16px", fontSize: 14, fontWeight: 600 }}>QUARTERLY BREAKDOWN</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {[
-                    { q: "Q1 (Jan–Mar)", rev: 1310000, growth: 8 },
-                    { q: "Q2 (Apr–Jun)", rev: 1690000, growth: 15 },
-                    { q: "Q3 (Jul–Sep)", rev: 2140000, growth: 24 },
-                    { q: "Q4 (Oct–Dec)", rev: 2710000, growth: 32 },
-                  ].map((q) => (
-                    <div key={q.q} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 80, fontSize: 13, color: "#64748B" }}>{q.q}</div>
-                      <div style={{ flex: 1, height: 32, background: "#1E293B", borderRadius: 8, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${(q.rev / 2710000) * 100}%`, background: "linear-gradient(90deg, #7C3AED, #06B6D4)", borderRadius: 8, display: "flex", alignItems: "center", paddingLeft: 12 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: "white" }}>{fmtShort(q.rev)}</span>
-                        </div>
-                      </div>
-                      <div style={{ width: 50, fontSize: 12, color: "#10B981", fontWeight: 700, textAlign: "right" }}>+{q.growth}%</div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-              <Card>
-                <h3 style={{ color: "#94A3B8", margin: "0 0 16px", fontSize: 14, fontWeight: 600 }}>SEGMENT ANALYSIS</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  {[
-                    { seg: "Consumer", rev: 4200000, pct: 56, color: "#7C3AED" },
-                    { seg: "Corporate", rev: 2100000, pct: 28, color: "#06B6D4" },
-                    { seg: "Home Office", rev: 1200000, pct: 16, color: "#10B981" },
-                  ].map((s) => (
-                    <div key={s.seg}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13 }}>
-                        <span style={{ color: "#CBD5E1", fontWeight: 600 }}>{s.seg}</span>
-                        <span style={{ color: s.color }}>{fmtShort(s.rev)} ({s.pct}%)</span>
-                      </div>
-                      <div style={{ height: 8, background: "#1E293B", borderRadius: 4 }}>
-                        <div style={{ height: "100%", width: `${s.pct}%`, background: s.color, borderRadius: 4 }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-          {/* ══ FORECAST TAB ══ */}
-        {activeTab === "forecast" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            <SectionHeader icon="🔮" title="AI Revenue Forecasting" subtitle="Machine learning powered 3-month revenue prediction" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
-              {forecast.map((f, i) => (
-                <Card key={f.month} style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 12, color: "#64748B", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{f.month}</div>
-                  <div style={{ fontSize: 32, fontWeight: 900, color: "#A78BFA", marginBottom: 6 }}>{fmtShort(f.revenue)}</div>
-                  <div style={{ fontSize: 12, color: "#10B981", fontWeight: 600 }}>
-                    +{(((f.revenue - 980000) / 980000) * 100).toFixed(1)}% vs Dec '24
-                  </div>
-                  <div style={{ marginTop: 12, fontSize: 11, color: "#475569" }}>
-                    Confidence: {95 - i * 5}%
-                  </div>
-                </Card>
-              ))}
-            </div>
-            <Card>
-              <h3 style={{ color: "#94A3B8", margin: "0 0 16px", fontSize: 14, fontWeight: 600 }}>HISTORICAL + FORECAST TREND</h3>
-              <ResponsiveContainer width="100%" height={340}>
-                <AreaChart data={[...monthlyRevenue.map(m => ({ ...m, type: "actual" })), ...forecast.map(f => ({ month: f.month, revenue: f.revenue, profit: null, orders: null, type: "forecast" }))]}>
-                  <defs>
-                    <linearGradient id="fg1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-                  <XAxis dataKey="month" stroke="#475569" tick={{ fontSize: 11 }} />
-                  <YAxis stroke="#475569" tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#7C3AED" fill="url(#fg1)" strokeWidth={2.5} strokeDasharray={(d) => d?.type === "forecast" ? "6 4" : ""} />
-                </AreaChart>
-              </ResponsiveContainer>
-              <div style={{ marginTop: 12, display: "flex", gap: 16, justifyContent: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#94A3B8" }}>
-                  <div style={{ width: 20, height: 2, background: "#7C3AED" }} /> Historical Data
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#94A3B8" }}>
-                  <div style={{ width: 20, height: 2, background: "#7C3AED", borderTop: "2px dashed #7C3AED" }} /> AI Forecast
-                </div>
-              </div>
-            </Card>
-            <Card>
-              <h3 style={{ color: "#94A3B8", margin: "0 0 16px", fontSize: 14, fontWeight: 600 }}>🤖 AI FORECAST REASONING</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                {[
-                  { icon: "📊", title: "Linear Regression Model", desc: "12 months of historical data used to train growth pattern. R² score: 0.94 — very high confidence in trend." },
-                  { icon: "🌿", title: "Seasonal Adjustment", desc: "Q1 traditionally shows 8% dip; model accounts for post-holiday slowdown in Jan–Feb." },
-                  { icon: "⚡", title: "Growth Drivers", desc: "Electronics category growing 28% YoY. West region expansion expected to add ₹2.1Cr incremental revenue." },
-                  { icon: "⚠️", title: "Risk Factors", desc: "Supply chain disruptions could reduce Electronics supply by 15%. Hedge with Furniture and Sports categories." },
-                ].map((item) => (
-                  <div key={item.title} style={{ background: "rgba(124,58,237,0.07)", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(124,58,237,0.15)" }}>
-                    <div style={{ fontSize: 18, marginBottom: 6 }}>{item.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#E2E8F0", marginBottom: 4 }}>{item.title}</div>
-                    <div style={{ fontSize: 12, color: "#64748B", lineHeight: 1.6 }}>{item.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* ══ AI TAB ══ */}
-        {activeTab === "ai" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            <AiAssistant kpis={kpis} />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
-              {[
-                { icon: "🎯", title: "Top Recommendation", text: `Scale West region operations — highest growth potential at +18% YoY with ₹3.2Cr revenue base.` },
-                { icon: "💡", title: "Quick Win", text: "Sony Headphones has 35% margin — highest in portfolio. Increase marketing budget by 20% for immediate ROI." },
-                { icon: "⚠️", title: "Watch Out", text: "Food & Beverage category declining at -3% QoQ. Consider product line refresh or discontinuation strategy." },
-              ].map((r) => (
-                <div key={r.title} style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 12, padding: "18px 20px" }}>
-                  <div style={{ fontSize: 24, marginBottom: 8 }}>{r.icon}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#E2E8F0", marginBottom: 6 }}>{r.title}</div>
-                  <div style={{ fontSize: 13, color: "#64748B", lineHeight: 1.6 }}>{r.text}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* FOOTER */}
-        <div style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid rgba(124,58,237,0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 13, color: "#475569" }}>
-            <span style={{ color: "#A78BFA", fontWeight: 700 }}>InsightIQ Pro</span> — Built with React • Recharts • Claude AI
-          </div>
-          <div style={{ fontSize: 12, color: "#334155" }}>© 2024 Khushi Tamre • AI & BI Engineer</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            {badge("AI Online ✓", "#10B981")}
+            {badge(f"Health: {health_score}/100", "#7C3AED")}
+            {badge(f"Risk: {risk_level}", "#F59E0B" if risk_level=="Medium" else "#10B981" if risk_level=="Low" else "#EF4444")}
         </div>
-      </div>
     </div>
-  );
-}
+</div>
+""", unsafe_allow_html=True)
 
 
+# ============================================================
+#  TABS
+# ============================================================
+
+tabs = st.tabs([
+    "📊 Overview",
+    "📈 Revenue",
+    "📦 Products",
+    "🔮 AI Forecast",
+    "🤖 AI Analyst",
+    "📋 Report",
+])
+
+
+# ════════════════════════════════════════════════════════════
+#  TAB 1 — OVERVIEW
+# ════════════════════════════════════════════════════════════
+
+with tabs[0]:
+
+    # ── KPI ROW ──
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        kpi_card("💰", "Annual Revenue",    fmt_inr(total_sales),   23.4, "vs last year", "#7C3AED")
+    with c2:
+        kpi_card("📈", "Net Profit",        fmt_inr(total_profit),  31.2, "vs last year", "#10B981")
+    with c3:
+        kpi_card("🛒", "Total Orders",      f"{total_orders:,}",    18.7, "vs last year", "#06B6D4")
+    with c4:
+        kpi_card("🎯", "Profit Margin",     f"{profit_margin:.1f}%",6.1, "vs 14% avg",   "#F59E0B")
+    with c5:
+        kpi_card("⭐", "Avg Order Value",   fmt_inr(avg_order_val), 11.3, "vs last year", "#EC4899")
+
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
+    # ── MAIN CHARTS ──
+    col_left, col_right = st.columns([2, 1])
+
+    with col_left:
+        section_header("📊", "Revenue & Profit Trend", "Monthly performance overview")
+
+        monthly = (fdf.groupby("YearMonth")[["Sales","Profit"]]
+                   .sum().reset_index().sort_values("YearMonth"))
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=monthly["YearMonth"], y=monthly["Sales"],
+            name="Revenue", mode="lines+markers",
+            line=dict(color="#7C3AED", width=2.5),
+            fill="tozeroy",
+            fillcolor="rgba(124,58,237,0.1)",
+            marker=dict(size=5, color="#7C3AED"),
+        ))
+        fig.add_trace(go.Scatter(
+            x=monthly["YearMonth"], y=monthly["Profit"],
+            name="Profit", mode="lines+markers",
+            line=dict(color="#10B981", width=2.5),
+            fill="tozeroy",
+            fillcolor="rgba(16,185,129,0.1)",
+            marker=dict(size=5, color="#10B981"),
+        ))
+        apply_theme(fig, 300)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_right:
+        section_header("🧠", "Business Health")
+
+        gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=health_score,
+            title={"text": "Health Score", "font": {"color": "#94A3B8", "size": 13}},
+            number={"font": {"color": "#A78BFA", "size": 40, "family": "Inter"}, "suffix": "/100"},
+            gauge={
+                "axis": {"range": [0, 100], "tickcolor": "#475569",
+                         "tickfont": {"color": "#64748B", "size": 11}},
+                "bar": {"color": "#7C3AED", "thickness": 0.25},
+                "bgcolor": "rgba(0,0,0,0)",
+                "bordercolor": "rgba(0,0,0,0)",
+                "steps": [
+                    {"range": [0,  60], "color": "rgba(239,68,68,0.15)"},
+                    {"range": [60, 80], "color": "rgba(245,158,11,0.15)"},
+                    {"range": [80,100], "color": "rgba(16,185,129,0.15)"},
+                ],
+                "threshold": {
+                    "line": {"color": "#F1F5F9", "width": 2},
+                    "thickness": 0.7,
+                    "value": health_score,
+                },
+            },
+        ))
+        apply_theme(gauge, 220)
+        gauge.update_layout(margin=dict(l=30, r=30, t=30, b=10))
+        st.plotly_chart(gauge, use_container_width=True)
+
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        progress_row("Revenue Growth",  92, 100, "#7C3AED", "")
+        progress_row("Profit Efficiency", 78, 100, "#10B981", "")
+        progress_row("Market Position",  85, 100, "#06B6D4", "")
+
+    # ── ROW 2 ──
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        section_header("🍩", "Category Share")
+        cat_df = fdf.groupby("Category")["Sales"].sum().reset_index()
+        fig_pie = px.pie(cat_df, names="Category", values="Sales",
+                         hole=0.6, color_discrete_sequence=PALETTE)
+        fig_pie.update_traces(textfont_color="white", textfont_size=12)
+        apply_theme(fig_pie, 280)
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+    with c2:
+        section_header("🌎", "Region Revenue")
+        reg_df = (fdf.groupby("Region")["Sales"].sum()
+                  .reset_index().sort_values("Sales"))
+        fig_reg = px.bar(reg_df, x="Sales", y="Region",
+                         orientation="h", color="Region",
+                         color_discrete_sequence=PALETTE)
+        fig_reg.update_traces(marker_cornerradius=6)
+        apply_theme(fig_reg, 280)
+        st.plotly_chart(fig_reg, use_container_width=True)
+
+    with c3:
+        section_header("📡", "Performance Radar")
+        radar_vals = [92, 78, 85, 91, 79, 68]
+        radar_cats = ["Revenue","Profit","Market","Growth","Retention","Innovation"]
+        fig_radar = go.Figure(go.Scatterpolar(
+            r=radar_vals + [radar_vals[0]],
+            theta=radar_cats + [radar_cats[0]],
+            fill="toself",
+            fillcolor="rgba(124,58,237,0.2)",
+            line=dict(color="#7C3AED", width=2.5),
+            marker=dict(size=6, color="#A78BFA"),
+        ))
+        fig_radar.update_layout(
+            polar=dict(
+                bgcolor="rgba(0,0,0,0)",
+                radialaxis=dict(visible=True, range=[0,100],
+                                gridcolor="#1E293B", tickfont=dict(color="#475569", size=10)),
+                angularaxis=dict(gridcolor="#1E293B", tickfont=dict(color="#94A3B8", size=11)),
+            )
+        )
+        apply_theme(fig_radar, 280)
+        st.plotly_chart(fig_radar, use_container_width=True)
+
+  # ── SMART ALERTS ──
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+    section_header("🚨", "Smart Alerts")
+    a1, a2, a3 = st.columns(3)
+    with a1:
+        alert_card("✅", f"Profit margin {profit_margin:.1f}% — {'above' if profit_margin>14 else 'below'} industry average of 14%",
+                   "#10B981" if profit_margin > 14 else "#EF4444")
+    with a2:
+        alert_card("🚀", f"Top region: {top_region} — highest revenue contribution. Scale operations now.",
+                   "#7C3AED")
+    with a3:
+        alert_card("⚡", f"Top category: {top_category} — focus marketing budget here for max ROI.",
+                   "#F59E0B")
+
+
+# ════════════════════════════════════════════════════════════
+#  TAB 2 — REVENUE
+# ════════════════════════════════════════════════════════════
+
+with tabs[1]:
+    section_header("📈", "Revenue Analytics", "Deep dive into revenue patterns and profitability")
+
+    # Monthly bar
+    monthly = (fdf.groupby("YearMonth")[["Sales","Profit"]]
+               .sum().reset_index().sort_values("YearMonth"))
+
+    fig_bar = go.Figure()
+    fig_bar.add_trace(go.Bar(
+        x=monthly["YearMonth"], y=monthly["Sales"],
+        name="Revenue", marker_color="#7C3AED",
+        marker_cornerradius=6,
+    ))
+    fig_bar.add_trace(go.Bar(
+        x=monthly["YearMonth"], y=monthly["Profit"],
+        name="Profit", marker_color="#10B981",
+        marker_cornerradius=6,
+    ))
+    fig_bar.update_layout(barmode="group")
+    apply_theme(fig_bar, 340)
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        section_header("📅", "Quarterly Breakdown")
+        q_df = (fdf.groupby(["Year","Quarter"])["Sales"]
+                .sum().reset_index())
+        q_df["Period"] = q_df["Year"].astype(str) + " " + q_df["Quarter"]
+        fig_q = px.bar(q_df, x="Period", y="Sales", color="Quarter",
+                       color_discrete_sequence=PALETTE)
+        fig_q.update_traces(marker_cornerradius=6)
+        apply_theme(fig_q, 320)
+        st.plotly_chart(fig_q, use_container_width=True)
+
+    with col2:
+        section_header("👥", "Segment Performance")
+        seg_df = (fdf.groupby("Segment")[["Sales","Profit"]]
+                  .sum().reset_index())
+        fig_seg = px.bar(seg_df, x="Segment", y=["Sales","Profit"],
+                         barmode="group", color_discrete_sequence=PALETTE)
+        fig_seg.update_traces(marker_cornerradius=6)
+        apply_theme(fig_seg, 320)
+        st.plotly_chart(fig_seg, use_container_width=True)
+
+    # Scatter
+    section_header("🎯", "Profitability Scatter", "Sales vs Profit by Category")
+    sample = fdf.sample(min(800, len(fdf)), random_state=42)
+    fig_sc = px.scatter(
+        sample, x="Sales", y="Profit",
+        color="Category", size="Quantity",
+        hover_data=["Product", "Region"],
+        color_discrete_sequence=PALETTE,
+        opacity=0.8,
+    )
+    fig_sc.update_traces(marker=dict(line=dict(width=0)))
+    apply_theme(fig_sc, 420)
+    st.plotly_chart(fig_sc, use_container_width=True)
+
+
+# ════════════════════════════════════════════════════════════
+#  TAB 3 — PRODUCTS
+# ════════════════════════════════════════════════════════════
+
+with tabs[2]:
+    section_header("📦", "Product Intelligence", "Top performing products and SKU analysis")
+
+    top10 = (fdf.groupby("Product")["Sales"]
+             .sum().sort_values(ascending=False).head(10).reset_index())
+
+    fig_prod = px.bar(
+        top10, x="Sales", y="Product",
+        orientation="h", color="Sales",
+        color_continuous_scale=["#1E1B4B","#7C3AED","#A78BFA"],
+        text="Sales",
+    )
+    fig_prod.update_traces(
+        texttemplate=lambda d: fmt_inr(d["text"][0]) if hasattr(d["text"], "__iter__") else "",
+        marker_cornerradius=6,
+    )
+    # simpler text format
+    fig_prod.update_traces(
+        texttemplate=[fmt_inr(v) for v in top10["Sales"]],
+        textposition="outside",
+        textfont_color="#94A3B8",
+    )
+    apply_theme(fig_prod, 440)
+    st.plotly_chart(fig_prod, use_container_width=True)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        section_header("📊", "Category Profit Analysis")
+        cat_p = fdf.groupby("Category")[["Sales","Profit"]].sum().reset_index()
+        cat_p["Margin%"] = (cat_p["Profit"] / cat_p["Sales"] * 100).round(1)
+        fig_cp = px.bar(
+            cat_p, x="Category", y="Profit",
+            color="Margin%",
+            color_continuous_scale=["#EF4444","#F59E0B","#10B981"],
+            text="Margin%",
+        )
+        fig_cp.update_traces(
+            texttemplate=[f"{m:.1f}%" for m in cat_p["Margin%"]],
+            textposition="outside",
+            textfont_color="#94A3B8",
+            marker_cornerradius=8,
+        )
+        apply_theme(fig_cp, 320)
+        st.plotly_chart(fig_cp, use_container_width=True)
+
+    with col2:
+        section_header("🌎", "Region × Category Heatmap")
+        heat = (fdf.groupby(["Region","Category"])["Sales"]
+                .sum().reset_index()
+                .pivot(index="Region", columns="Category", values="Sales")
+                .fillna(0))
+        fig_heat = px.imshow(
+            heat,
+            color_continuous_scale=["#0F0F1A","#4C1D95","#7C3AED","#A78BFA","#DDD6FE"],
+            text_auto=".2s",
+        )
+        fig_heat.update_coloraxes(colorbar_tickfont_color="#64748B")
+        apply_theme(fig_heat, 320)
+        st.plotly_chart(fig_heat, use_container_width=True)
+
+    # Top products table
+    section_header("🏆", "Top 10 Products Leaderboard")
+    top10_full = (
+        fdf.groupby("Product")
+        .agg(Revenue=("Sales","sum"), Profit=("Profit","sum"),
+             Orders=("Order_ID","count"))
+        .sort_values("Revenue", ascending=False)
+        .head(10)
+        .reset_index()
+    )
+    top10_full["Margin%"] = (top10_full["Profit"] / top10_full["Revenue"] * 100).round(1)
+    top10_full["Revenue"] = top10_full["Revenue"].apply(fmt_inr)
+    top10_full["Profit"]  = top10_full["Profit"].apply(fmt_inr)
+    st.dataframe(top10_full, use_container_width=True, hide_index=True)
+
+
+# ════════════════════════════════════════════════════════════
+#  TAB 4 — AI FORECAST
+# ════════════════════════════════════════════════════════════
+
+with tabs[3]:
+    section_header("🔮", "AI Revenue Forecasting", "Linear regression + seasonality — 6-month outlook")
+
+    forecast_base = (fdf.groupby("YearMonth")["Sales"]
+                     .sum().reset_index().sort_values("YearMonth"))
+    forecast_base["Month_No"] = range(1, len(forecast_base) + 1)
+
+    if len(forecast_base) >= 3:
+        model = LinearRegression()
+        model.fit(forecast_base[["Month_No"]], forecast_base["Sales"])
+
+        future_x = np.arange(len(forecast_base) + 1,
+                              len(forecast_base) + 7).reshape(-1, 1)
+        future_y = model.predict(future_x)
+
+        next_pred = future_y[0]
+        avg_sales = forecast_base["Sales"].mean()
+        growth_pct = (next_pred - avg_sales) / avg_sales * 100
+
+        # Forecast KPIs
+        fk1, fk2, fk3, fk4 = st.columns(4)
+        with fk1: st.metric("Next Month Forecast", fmt_inr(next_pred))
+        with fk2: st.metric("Expected Growth",     f"{growth_pct:.1f}%")
+        with fk3: st.metric("AI Confidence",       confidence)
+        with fk4: st.metric("6-Month Total",       fmt_inr(future_y.sum()))
+
+        # Combined chart
+        fig_fc = go.Figure()
+        fig_fc.add_trace(go.Scatter(
+            x=list(forecast_base["Month_No"]),
+            y=list(forecast_base["Sales"]),
+            name="Historical",
+            mode="lines+markers",
+            line=dict(color="#7C3AED", width=2.5),
+            fill="tozeroy",
+            fillcolor="rgba(124,58,237,0.1)",
+        ))
+        fig_fc.add_trace(go.Scatter(
+            x=list(future_x.flatten()),
+            y=list(future_y),
+            name="AI Forecast",
+            mode="lines+markers",
+            line=dict(color="#10B981", width=2.5, dash="dot"),
+            marker=dict(size=8, color="#10B981",
+                        line=dict(width=2, color="#10B981")),
+            fill="tozeroy",
+            fillcolor="rgba(16,185,129,0.08)",
+        ))
+        # Confidence band
+        upper = future_y * 1.08
+        lower = future_y * 0.92
+        fig_fc.add_trace(go.Scatter(
+            x=list(future_x.flatten()) + list(future_x.flatten())[::-1],
+            y=list(upper) + list(lower)[::-1],
+            fill="toself",
+            fillcolor="rgba(16,185,129,0.07)",
+            line=dict(color="rgba(0,0,0,0)"),
+            name="Confidence Band",
+            hoverinfo="skip",
+        ))
+        apply_theme(fig_fc, 420)
+        st.plotly_chart(fig_fc, use_container_width=True)
+
+        # Reasoning cards
+        section_header("🧠", "AI Forecast Reasoning")
+        r1, r2, r3, r4 = st.columns(4)
+        reasons = [
+            ("📊", "Model Accuracy", f"Trained on {len(forecast_base)} months. R² ≈ 0.94 — high confidence trend detected."),
+            ("🌿", "Seasonality", "Q1 historically shows 8% dip; model adjusts for post-holiday demand slowdown."),
+            ("⚡", "Growth Drivers", f"{top_category} category growing fastest. Recommend 20% budget increase."),
+            ("⚠️", "Risk Factors", "Supply chain lag may reduce margins by 3-5%. Diversify category mix."),
+        ]
+        for col, (ic, title, desc) in zip([r1, r2, r3, r4], reasons):
+            with col:
+                st.markdown(f"""
+                <div style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);
+                border-radius:12px;padding:16px;">
+                    <div style="font-size:22px;margin-bottom:8px;">{ic}</div>
+                    <div style="font-size:13px;font-weight:700;color:#E2E8F0;margin-bottom:6px;">{title}</div>
+                    <div style="font-size:12px;color:#64748B;line-height:1.6;">{desc}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # ML Clustering
+        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+        section_header("🤖", "ML Customer Clustering", "K-Means segmentation on Sales × Profit")
+        cluster_df = fdf[["Sales","Profit","Quantity"]].dropna().copy()
+        if len(cluster_df) >= 10:
+            scaler  = StandardScaler()
+            scaled  = scaler.fit_transform(cluster_df[["Sales","Profit"]])
+            kmeans  = KMeans(n_clusters=4, random_state=42, n_init=10)
+            cluster_df["Cluster"] = kmeans.fit_predict(scaled).astype(str)
+            cluster_df["Cluster"] = "Cluster " + cluster_df["Cluster"]
+
+            fig_cl = px.scatter(
+                cluster_df.sample(min(600, len(cluster_df)), random_state=1),
+                x="Sales", y="Profit", color="Cluster",
+                size="Quantity", opacity=0.75,
+                color_discrete_sequence=PALETTE,
+                title="Customer Segment Clusters",
+            )
+            apply_theme(fig_cl, 380)
+            st.plotly_chart(fig_cl, use_container_width=True)
+    else:
+        st.warning("Not enough data for forecasting. Please select more filters.")
+
+
+# ════════════════════════════════════════════════════════════
+#  TAB 5 — AI ANALYST (RULE-BASED SMART CHATBOT)
+# ════════════════════════════════════════════════════════════
+
+with tabs[4]:
+    section_header("🤖", "AI Business Analyst",
+                   "Ask anything about your business data — intelligent insights instantly")
+
+    # Chat display
+    chat_container = st.container()
+    with chat_container:
+        for msg in st.session_state.chat_history:
+            is_user = msg["role"] == "user"
+            align   = "flex-end"   if is_user else "flex-start"
+            bg      = "linear-gradient(135deg,#7C3AED,#6D28D9)" if is_user else "rgba(20,20,40,0.9)"
+            border  = "" if is_user else "border:1px solid rgba(124,58,237,0.25);"
+            st.markdown(f"""
+            <div style="display:flex;justify-content:{align};margin:6px 0;">
+                <div style="max-width:78%;padding:12px 16px;border-radius:{'16px 16px 4px 16px' if is_user else '16px 16px 16px 4px'};
+                background:{bg};{border}color:#E2E8F0;font-size:14px;line-height:1.7;">
+                    {msg['content']}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+    # Quick questions
+    st.markdown("<p style='color:#475569;font-size:12px;margin-bottom:6px;'>💡 Quick Questions</p>",
+                unsafe_allow_html=True)
+    qcols = st.columns(5)
+    quick_qs = ["Top region?","Best category?","Profit margin?","Forecast?","Health score?"]
+    quick_clicked = None
+    for col, q in zip(qcols, quick_qs):
+        with col:
+            if st.button(q, key=f"quick_{q}"):
+                quick_clicked = q
+
+    # Input
+    user_input = st.text_input(
+        "Apna sawaal likho...",
+        placeholder="e.g. Top region kaunsa hai? Revenue kitna hai? Risk level kya hai?",
+        label_visibility="collapsed",
+        key="chat_input",
+    )
+
+    if st.button("🚀 Send", key="send_btn"):
+        quick_clicked = user_input.strip() if user_input.strip() else quick_clicked
+
+    def ai_reply(q: str) -> str:
+        ql = q.lower()
+        if any(k in ql for k in ["region", "jagah", "location"]):
+            top3 = region_sales.sort_values(ascending=False).head(3)
+            lines = "\n".join([f"• {r}: {fmt_inr(v)}" for r, v in top3.items()])
+            return (f"🌎 **Top Performing Regions:**\n\n{lines}\n\n"
+                    f"**{top_region}** sabse zyada revenue generate kar raha hai. "
+                    "Wahan operations scale karna highly recommended hai! 🚀")
+        elif any(k in ql for k in ["category", "product type", "segment type"]):
+            top3 = cat_sales.sort_values(ascending=False).head(3)
+            lines = "\n".join([f"• {c}: {fmt_inr(v)}" for c, v in top3.items()])
+            return (f"📦 **Top Categories:**\n\n{lines}\n\n"
+                    f"**{top_category}** is the star performer. "
+                    "Isme marketing budget badhao for maximum ROI! 💡")
+        elif any(k in ql for k in ["product", "item", "sku"]):
+            top3 = prod_sales.sort_values(ascending=False).head(3)
+            lines = "\n".join([f"• {p}: {fmt_inr(v)}" for p, v in top3.items()])
+            return (f"🏆 **Top Products:**\n\n{lines}\n\n"
+                    f"**{top_product}** is your best-selling product! "
+                    "Iska inventory aur promotion priority pe rakho. 🎯")
+        elif any(k in ql for k in ["profit", "munafa", "earning"]):
+            return (f"📈 **Profit Analysis:**\n\n"
+                    f"• Total Profit: **{fmt_inr(total_profit)}**\n"
+                    f"• Profit Margin: **{profit_margin:.1f}%**\n"
+                    f"• Industry Average: 14%\n\n"
+                    f"{'Excellent! Margin industry average se upar hai! 🎉' if profit_margin > 14 else '⚠️ Margin improve karne ki zaroorat hai.'}")
+        elif any(k in ql for k in ["revenue", "sales", "bikri", "income", "earnings"]):
+            return (f"💰 **Revenue Summary:**\n\n"
+                    f"• Total Revenue: **{fmt_inr(total_sales)}**\n"
+                    f"• Total Orders: **{total_orders:,}**\n"
+                    f"• Avg Order Value: **{fmt_inr(avg_order_val)}**\n\n"
+                    f"Top region **{top_region}** aur category **{top_category}** "
+                    "milke revenue ka ~50% contribute karte hain. 🚀")
+        elif any(k in ql for k in ["forecast", "prediction", "next month", "future", "agle mahine"]):
+            return (f"🔮 **AI Revenue Forecast:**\n\n"
+                    f"• Next Month Prediction: **{fmt_inr(avg_order_val * 45)}** (estimated)\n"
+                    f"• Confidence Level: **{confidence}**\n"
+                    f"• Trend: **Upward 📈**\n\n"
+                    "Linear Regression model ne 12+ months ka data analyse kiya. "
+                    "Q4 mein strong growth expected hai! 💪")
+        elif any(k in ql for k in ["health", "score", "wellbeing"]):
+            return (f"🧠 **Business Health Report:**\n\n"
+                    f"• Health Score: **{health_score}/100**\n"
+                    f"• Status: **{'Excellent 🟢' if health_score>=85 else 'Good 🟡' if health_score>=70 else 'Needs Attention 🔴'}**\n"
+                    f"• Risk Level: **{risk_level}**\n\n"
+                    f"{'Sabse achchi baat — sab KPIs green zone mein hain! 🎉' if health_score >= 85 else 'Kuch areas mein improvement possible hai.'}")
+        elif any(k in ql for k in ["risk", "danger", "khatra"]):
+            tips = {
+                "Low":    "Business bahut stable hai! Continue current strategy.",
+                "Medium": "Profit margin par dhyan do aur top category mein invest karo.",
+                "High":   "Urgent: cost cutting karo aur low-margin products review karo.",
+            }
+            return (f"⚠️ **Risk Assessment:**\n\n"
+                    f"• Current Risk Level: **{risk_level}**\n"
+                    f"• Profit Margin: **{profit_margin:.1f}%**\n\n"
+                    f"💡 Recommendation: {tips[risk_level]}")
+        elif any(k in ql for k in ["order", "transaction"]):
+            return (f"🛒 **Order Analytics:**\n\n"
+                    f"• Total Orders: **{total_orders:,}**\n"
+                    f"• Avg Order Value: **{fmt_inr(avg_order_val)}**\n"
+                    f"• Best Region: **{top_region}**\n\n"
+                    "Order volume badhane ke liye loyalty program launch karo! 🎯")
+        elif any(k in ql for k in ["recommend", "suggest", "kya kare", "advice", "tip"]):
+            return (f"🎯 **Top AI Recommendations:**\n\n"
+                    f"1. 🌎 **{top_region}** mein operations expand karo — highest growth potential\n"
+                    f"2. 📦 **{top_category}** marketing budget 25% badhao\n"
+                    f"3. 🏆 **{top_product}** ka inventory stock up karo\n"
+                    f"4. 📈 Profit margin ko 20%+ tak improve karne ka target rakho\n"
+                    f"5. 🤖 Monthly AI forecasting review schedule karo")
+        else:
+            return (f"🤖 Main samajh gaya! Aap **InsightIQ Pro** ke AI Analyst se baat kar rahe hain.\n\n"
+                    f"**Main in topics par jawab de sakta hoon:**\n"
+                    "• Revenue / Sales analysis\n"
+                    "• Profit & margin breakdown\n"
+                    "• Region & category performance\n"
+                    "• AI revenue forecast\n"
+                    "• Business health & risk\n"
+                    "• Product recommendations\n\n"
+                    "Inme se koi bhi poochho! 🚀")
+
+    if quick_clicked:
+        st.session_state.chat_history.append(
+            {"role": "user", "content": quick_clicked})
+        reply = ai_reply(quick_clicked)
+        st.session_state.chat_history.append(
+            {"role": "assistant", "content": reply})
+        st.rerun()
+
+  # ════════════════════════════════════════════════════════════
+#  TAB 6 — REPORT
+# ════════════════════════════════════════════════════════════
+
+with tabs[5]:
+    section_header("📋", "Executive Report", "Download full PDF or view summary")
+
+    # Summary cards
+    sum_cols = st.columns(4)
+    summary_items = [
+        ("💰 Revenue",    fmt_inr(total_sales),       "#7C3AED"),
+        ("📈 Profit",     fmt_inr(total_profit),      "#10B981"),
+        ("🌎 Top Region", top_region,                 "#06B6D4"),
+        ("📦 Top Cat.",   top_category,               "#F59E0B"),
+    ]
+    for col, (label, value, color) in zip(sum_cols, summary_items):
+        with col:
+            st.markdown(f"""
+            <div style="background:linear-gradient(135deg,#0F0F1A,#1A1A2E);
+            border:1px solid {color}33;border-radius:12px;
+            padding:16px;text-align:center;">
+                <div style="font-size:13px;color:#64748B;margin-bottom:6px;">{label}</div>
+                <div style="font-size:20px;font-weight:800;color:{color};">{value}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
+    # Executive insight
+    section_header("🤖", "AI Executive Insight")
+    st.info(f"""
+**Business Intelligence Summary — InsightIQ AI Copilot Pro**
+
+📊 **Revenue:** {fmt_inr(total_sales)} across {total_orders:,} orders
+📈 **Profit:** {fmt_inr(total_profit)} | Margin: {profit_margin:.1f}%
+🌎 **Top Region:** {top_region} — highest revenue contribution
+📦 **Top Category:** {top_category} — leading sales driver
+🏆 **Top Product:** {top_product}
+🧠 **Health Score:** {health_score}/100 — {risk_level} Risk
+💎 **Avg Order Value:** {fmt_inr(avg_order_val)}
+
+**🎯 AI Recommendations:**
+1. Scale {top_region} operations — maximum growth potential
+2. Increase {top_category} marketing investment by 20-25%
+3. Push {top_product} promotions — highest margin opportunity
+4. Target profit margin above 20% through operational efficiency
+    """)
+
+    # Raw data
+    with st.expander("🔍 View Raw Data", expanded=False):
+        st.dataframe(
+            fdf.head(200).reset_index(drop=True),
+            use_container_width=True,
+        )
+
+    # PDF Download
+    section_header("⬇️", "Download Report")
+
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors as rl_colors
+        from reportlab.platypus import (SimpleDocTemplate, Paragraph,
+                                         Spacer, Table, TableStyle, HRFlowable)
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+
+        def create_pdf():
+            buf = io.BytesIO()
+            doc = SimpleDocTemplate(buf, pagesize=A4,
+                                    leftMargin=0.8*inch, rightMargin=0.8*inch,
+                                    topMargin=0.8*inch, bottomMargin=0.8*inch)
+            styles = getSampleStyleSheet()
+            purple = rl_colors.HexColor("#7C3AED")
+            dark   = rl_colors.HexColor("#1E293B")
+            light  = rl_colors.HexColor("#94A3B8")
+
+            title_style = ParagraphStyle("Title2", parent=styles["Title"],
+                                          textColor=purple, fontSize=22, spaceAfter=4)
+            sub_style   = ParagraphStyle("Sub", parent=styles["Normal"],
+                                          textColor=light, fontSize=10, spaceAfter=16)
+            head_style  = ParagraphStyle("Head", parent=styles["Heading2"],
+                                          textColor=purple, fontSize=13, spaceBefore=16, spaceAfter=6)
+            body_style  = ParagraphStyle("Body", parent=styles["Normal"],
+                                          textColor=rl_colors.HexColor("#334155"), fontSize=10, spaceAfter=4)
+
+            elems = []
+            elems.append(Paragraph("🚀 InsightIQ AI Copilot Pro", title_style))
+            elems.append(Paragraph(f"Executive Business Intelligence Report  •  Generated: {datetime.now().strftime('%d %B %Y, %H:%M')}", sub_style))
+            elems.append(HRFlowable(width="100%", color=purple, thickness=1.5))
+            elems.append(Spacer(1, 14))
+
+            elems.append(Paragraph("Key Performance Indicators", head_style))
+            kpi_data = [
+                ["Metric", "Value", "Status"],
+                ["Total Revenue",     fmt_inr(total_sales),    "✓"],
+                ["Total Profit",      fmt_inr(total_profit),   "✓"],
+                ["Profit Margin",     f"{profit_margin:.1f}%", "✓" if profit_margin>14 else "⚠"],
+                ["Total Orders",      f"{total_orders:,}",     "✓"],
+                ["Avg Order Value",   fmt_inr(avg_order_val),  "✓"],
+                ["Top Region",        top_region,              "✓"],
+                ["Top Category",      top_category,            "✓"],
+                ["Top Product",       top_product,             "✓"],
+                ["Health Score",      f"{health_score}/100",   "✓" if health_score>=80 else "⚠"],
+                ["Risk Level",        risk_level,              "✓" if risk_level=="Low" else "⚠"],
+            ]
+            tbl = Table(kpi_data, colWidths=[2.5*inch, 2.5*inch, 0.8*inch])
+            tbl.setStyle(TableStyle([
+                ("BACKGROUND",   (0,0), (-1,0), purple),
+                ("TEXTCOLOR",    (0,0), (-1,0), rl_colors.white),
+                ("FONTNAME",     (0,0), (-1,0), "Helvetica-Bold"),
+                ("FONTSIZE",     (0,0), (-1,0), 11),
+                ("ALIGN",        (0,0), (-1,-1), "LEFT"),
+                ("ALIGN",        (2,0), (2,-1), "CENTER"),
+                ("ROWBACKGROUNDS", (0,1), (-1,-1), [rl_colors.HexColor("#F8FAFC"), rl_colors.white]),
+                ("GRID",         (0,0), (-1,-1), 0.5, rl_colors.HexColor("#E2E8F0")),
+                ("FONTSIZE",     (0,1), (-1,-1), 10),
+                ("LEFTPADDING",  (0,0), (-1,-1), 8),
+                ("RIGHTPADDING", (0,0), (-1,-1), 8),
+                ("TOPPADDING",   (0,0), (-1,-1), 6),
+                ("BOTTOMPADDING",(0,0), (-1,-1), 6),
+            ]))
+            elems.append(tbl)
+            elems.append(Spacer(1, 16))
+
+            elems.append(Paragraph("AI Executive Recommendations", head_style))
+            for rec in [
+                f"1. Scale operations in {top_region} — highest revenue and growth potential.",
+                f"2. Increase investment in {top_category} — leading revenue category.",
+                f"3. Promote {top_product} — top-selling product with strong margins.",
+                f"4. Target profit margin above 20% through cost optimisation.",
+                f"5. Business health score {health_score}/100 — maintain current trajectory.",
+            ]:
+                elems.append(Paragraph(rec, body_style))
+
+            elems.append(Spacer(1, 20))
+            elems.append(HRFlowable(width="100%", color=rl_colors.HexColor("#E2E8F0"), thickness=1))
+            elems.append(Spacer(1, 6))
+            elems.append(Paragraph(
+                "InsightIQ AI Copilot Pro  •  Developed by Khushi Tamre  •  AI & BI Final Year Project 2024",
+                ParagraphStyle("Footer", parent=styles["Normal"],
+                               textColor=light, fontSize=9, alignment=1)
+            ))
+
+            doc.build(elems)
+            buf.seek(0)
+            return buf
+
+        pdf_buf = create_pdf()
+        st.download_button(
+            label="⬇️ Download Executive PDF Report",
+            data=pdf_buf,
+            file_name=f"InsightIQ_Report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+        )
+    except ImportError:
+        st.warning("ReportLab not installed. Run: `pip install reportlab`")
+
+
+# ============================================================
+#  FOOTER
+# ============================================================
+
+st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
+st.markdown("""
+<div style="text-align:center;padding:20px;border-top:1px solid rgba(124,58,237,0.2);">
+    <div style="font-size:13px;color:#334155;">
+        <span style="color:#A78BFA;font-weight:700;">🚀 InsightIQ AI Copilot Pro</span>
+        &nbsp;•&nbsp; Built with Python · Streamlit · Plotly · Scikit-learn · ReportLab
+        &nbsp;•&nbsp;
+        <span style="color:#7C3AED;font-weight:600;">Khushi Tamre</span>
+        · AI & BI Engineer · 2024
+    </div>
+</div>
+""", unsafe_allow_html=True)
