@@ -3,18 +3,24 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-
+from prophet import Prophet
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor, IsolationForest
 from sklearn.cluster import KMeans
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
-
 import io
 from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
+
+# XGBoost optional - agar install nahi hai to skip ho jayega
+try:
+    import xgboost as xgb
+    XGB_AVAILABLE = True
+except ImportError:
+    XGB_AVAILABLE = False
+    st.sidebar.warning("⚠️ XGBoost not installed. Using RandomForest only.")
 
 st.set_page_config(page_title="INSIGHT IQ ML", page_icon="🧠", layout="wide")
 
@@ -79,37 +85,52 @@ def load_data(file=None):
     df['Quarter'] = 'Q' + df['Order_Date'].dt.quarter.astype(str)
     df['YearMonth'] = df['Order_Date'].dt.to_period('M').astype(str)
     df['DayOfWeek'] = df['Order_Date'].dt.dayofweek
+    # Estimate discount if not present
+    if 'Discount' not in df.columns:
+        df['Discount'] = (1 - (df['Profit'] / df['Sales'])).clip(0, 0.5)
     return df
 
 @st.cache_resource
 def train_sales_model(df):
-    if len(df) < 15:
-        return None, None, {'error': 'Need 15+ rows for ML model'}
+    if len(df) < 10:
+        return None, None, {'error': f'Need 10+ rows for ML. Current: {len(df)}'}
 
     features = ['Quantity', 'Discount', 'Month', 'DayOfWeek', 'Year']
-    df['Discount'] = (df['Profit'] / df['Sales']).clip(0, 0.5) # Estimate discount
     X = df[features].fillna(0)
     y = df['Sales']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-    rf = RandomForestRegressor(n_estimators=50, random_state=42)
-    xgb_model = xgb.XGBRegressor(n_estimators=50, random_state=42)
+    # RandomForest - always available
+    rf = RandomForestRegressor(n_estimators=50, random_state=42, max_depth=5)
     rf.fit(X_train, y_train)
-    xgb_model.fit(X_train, y_train)
+    rf_pred = rf.predict(X_test)
 
-    pred = (rf.predict(X_test) + xgb_model.predict(X_test)) / 2
+    # XGBoost - optional
+    if XGB_AVAILABLE:
+        xgb_model = xgb.XGBRegressor(n_estimators=50, random_state=42, max_depth=5)
+        xgb_model.fit(X_train, y_train)
+        xgb_pred = xgb_model.predict(X_test)
+        ensemble_pred = (rf_pred + xgb_pred) / 2
+        model_name = "RF + XGBoost"
+    else:
+        xgb_model = None
+        ensemble_pred = rf_pred
+        model_name = "RandomForest"
+
     metrics = {
-        'mae': mean_absolute_error(y_test, pred),
-        'rmse': np.sqrt(mean_squared_error(y_test, pred)),
-        'r2': r2_score(y_test, pred),
-        'feature_importance': dict(zip(features, rf.feature_importances_))
+        'mae': mean_absolute_error(y_test, ensemble_pred),
+        'rmse': np.sqrt(mean_squared_error(y_test, ensemble_pred)),
+        'r2': r2_score(y_test, ensemble_pred),
+        'feature_importance': dict(zip(features, rf.feature_importances_)),
+        'model_name': model_name,
+        'test_size': len(y_test)
     }
     return rf, xgb_model, metrics
 
 @st.cache_data
 def customer_segmentation(df):
-    if len(df) < 8:
+    if df['Customer_Name'].nunique() < 4:
         return pd.DataFrame(), None, None
 
     rfm = df.groupby('Customer_Name').agg({
@@ -121,7 +142,8 @@ def customer_segmentation(df):
 
     scaler = StandardScaler()
     rfm_scaled = scaler.fit_transform(rfm[['Recency', 'Frequency', 'Monetary']])
-    kmeans = KMeans(n_clusters=min(4, len(rfm)), random_state=42, n_init=10)
+    n_clusters = min(4, len(rfm))
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
     rfm['Segment'] = kmeans.fit_predict(rfm_scaled)
 
     seg_names = {0: 'At Risk', 1: 'Champions', 2: 'Loyal', 3: 'Potential'}
@@ -129,7 +151,7 @@ def customer_segmentation(df):
     return rfm, kmeans, scaler
 
 def detect_anomalies(df):
-    iso = IsolationForest(contamination=0.1, random_state=42)
+    iso = IsolationForest(contamination=0.15, random_state=42)
     features = df[['Sales', 'Profit', 'Quantity']].fillna(0)
     df['Anomaly'] = iso.fit_predict(features)
     df['Anomaly_Score'] = iso.score_samples(features)
@@ -190,7 +212,7 @@ st.markdown(f"""
                -webkit-background-clip:text;-webkit-text-fill-color:transparent;">
         INSIGHT IQ ML COPILOT
     </h1>
-    <p style="color:{T['muted']};">Trained on {len(filtered_df)} records · {filtered_df['Customer_Name'].nunique()} customers</p>
+    <p style="color:{T['muted']};">Trained on {len(filtered_df)} records · {filtered_df['Customer_Name'].nunique()} customers · XGBoost: {'✅' if XGB_AVAILABLE else '❌'}</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -220,25 +242,31 @@ with tab1:
         st.plotly_chart(fig, use_container_width=True)
 
 with tab2:
-    st.markdown('<div class="section-label">🔮 ML Sales Prediction</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">🔮 ML Sales Prediction Model</div>', unsafe_allow_html=True)
 
-    if len(filtered_df) < 15:
-        st.warning(f"⚠️ Need 15+ rows for ML. Current: {len(filtered_df)}. Add more data for better predictions.")
+    rf_model, xgb_model, metrics = train_sales_model(filtered_df)
+
+    if metrics and 'error' in metrics:
+        st.error(f"⚠️ {metrics['error']}")
+        st.info("💡 Tip: Add more data rows for better ML performance. Minimum 15 rows recommended.")
+    elif metrics:
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("R² Score", f"{metrics['r2']:.3f}", help="1.0 = perfect prediction")
+        col2.metric("MAE", f"₹{metrics['mae']:,.0f}", help="Average error")
+        col3.metric("RMSE", f"₹{metrics['rmse']:,.0f}")
+        col4.metric("Model", metrics['model_name'])
+
+        st.markdown("**Feature Importance:**")
+        fi_df = pd.DataFrame(metrics['feature_importance'].items(), columns=['Feature', 'Importance'])
+        fig = px.bar(fi_df.sort_values('Importance'), x='Importance', y='Feature', orientation='h',
+                    color_discrete_sequence=[T['accent2']])
+        fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=300)
+        st.plotly_chart(fig, use_container_width=True)
+
+        if metrics['r2'] < 0.5:
+            st.warning("⚠️ Low R² score. Model needs more data to improve accuracy.")
     else:
-        rf_model, xgb_model, metrics = train_sales_model(filtered_df)
-
-        if 'error' not in metrics:
-            col1, col2, col3 = st.columns(3)
-            col1.metric("R² Score", f"{metrics['r2']:.3f}")
-            col2.metric("MAE", f"₹{metrics['mae']:,.0f}")
-            col3.metric("RMSE", f"₹{metrics['rmse']:,.0f}")
-
-            st.markdown("**Feature Importance:**")
-            fi_df = pd.DataFrame(metrics['feature_importance'].items(), columns=['Feature', 'Importance'])
-            fig = px.bar(fi_df.sort_values('Importance'), x='Importance', y='Feature', orientation='h',
-                        color_discrete_sequence=[T['accent2']])
-            fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=300)
-            st.plotly_chart(fig, use_container_width=True)
+        st.info("Click 'Train Model' to start")
 
 with tab3:
     st.markdown('<div class="section-label">👥 Customer Segmentation (RFM + KMeans)</div>', unsafe_allow_html=True)
@@ -261,7 +289,7 @@ with tab3:
 
         st.dataframe(rfm, use_container_width=True)
     else:
-        st.info("Need 8+ unique customers for segmentation")
+        st.info("Need 4+ unique customers for segmentation")
 
 with tab4:
     st.markdown('<div class="section-label">⚠️ Anomaly Detection (Isolation Forest)</div>', unsafe_allow_html=True)
