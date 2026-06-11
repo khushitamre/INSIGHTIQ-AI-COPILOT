@@ -21,7 +21,6 @@ from reportlab.platypus import (
 
 from reportlab.lib.styles import getSampleStyleSheet
 
-from fpdf import FPDF
 import io
 from datetime import datetime
 
@@ -988,100 +987,7 @@ if question:
 st.markdown("---")
 st.subheader("📄 Executive Report")
 
-def create_pdf():
 
-    buffer = io.BytesIO()
-
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4
-    )
-
-    styles = getSampleStyleSheet()
-
-    content = []
-
-    content.append(
-        Paragraph(
-            "INSIGHT IQ AI COPILOT REPORT",
-            styles["Title"]
-        )
-    )
-
-    content.append(
-        Spacer(1,20)
-    )
-
-    content.append(
-        Paragraph(
-            f"Total Revenue: ₹{total_sales:,.0f}",
-            styles["Normal"]
-        )
-    )
-
-    content.append(
-        Paragraph(
-            f"Total Profit: ₹{total_profit:,.0f}",
-            styles["Normal"]
-        )
-    )
-
-    content.append(
-        Paragraph(
-            f"Profit Margin: {profit_margin:.1f}%",
-            styles["Normal"]
-        )
-    )
-
-    content.append(
-        Paragraph(
-            f"Top Region: {top_region}",
-            styles["Normal"]
-        )
-    )
-
-    content.append(
-        Paragraph(
-            f"Top Category: {top_category}",
-            styles["Normal"]
-        )
-    )
-
-    content.append(
-        Paragraph(
-            f"Health Score: {health_score}/100",
-            styles["Normal"]
-        )
-    )
-
-    content.append(
-        Paragraph(
-            f"Risk Level: {risk_level}",
-            styles["Normal"]
-        )
-    )
-
-    content.append(
-        Paragraph(
-            f"Forecast Revenue: ₹{next_month_prediction:,.0f}",
-            styles["Normal"]
-        )
-    )
-
-    doc.build(content)
-
-    buffer.seek(0)
-
-    return buffer
-
-pdf_file = create_pdf()
-
-st.download_button(
-    label="⬇ Download Executive Report",
-    data=pdf_file,
-    file_name="Insight_IQ_Report.pdf",
-    mime="application/pdf"
-)
 
 st.markdown("---")
 st.subheader("📋 Executive Summary")
