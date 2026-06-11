@@ -3,7 +3,7 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, RadarChart,
-  PolarGrid, PolarAngleAxis, Radar
+  PolarGrid, PolarAngleAxis, Radar,Cr
 } from "recharts";
 
 # // ─── SAMPLE DATA ────────────────────────────────────────────────────────────
