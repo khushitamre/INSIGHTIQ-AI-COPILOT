@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from prophet import Prophet
 from sklearn.ensemble import IsolationForest
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
