@@ -12,7 +12,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 import io
 from datetime import datetime
 
-# ====================== ULTRA FUTURISTIC CONFIG ======================
+# ====================== FUTURISTIC UI ======================
 st.set_page_config(page_title="INSIGHT IQ AI COPILOT PRO", page_icon="⚡", layout="wide")
 
 st.markdown("""
@@ -29,13 +29,8 @@ st.markdown("""
         animation: glow 2.5s infinite alternate;
     }
     @keyframes glow { from {text-shadow: 0 0 20px #00F5FF;} to {text-shadow: 0 0 50px #FF00CC;} }
-    .glass {
-        background: rgba(255,255,255,0.06);
-        border-radius: 24px;
-        padding: 24px;
-        border: 1px solid rgba(0,255,255,0.3);
-        backdrop-filter: blur(20px);
-    }
+    .glass {background: rgba(255,255,255,0.07); border-radius: 24px; padding: 24px; 
+            border: 1px solid rgba(0,255,255,0.3); backdrop-filter: blur(20px);}
     .neon {text-shadow: 0 0 30px #00F5FF;}
 </style>
 """, unsafe_allow_html=True)
@@ -56,7 +51,7 @@ df = load_data()
 # ====================== SIDEBAR ======================
 with st.sidebar:
     st.title("⚡ INSIGHT IQ")
-    st.markdown("### **AI Business Intelligence**")
+    st.markdown("### AI Business Intelligence")
     st.markdown("---")
     
     years = sorted(df["Year"].dropna().unique())
@@ -104,28 +99,25 @@ with c3: st.metric("🛒 Orders", f"{total_orders:,}")
 with c4: st.metric("🎯 Margin", f"{profit_margin:.1f}%")
 with c5: st.metric("🧠 Health", f"{health_score}/100")
 
-# ====================== TABS FOR PRO LOOK ======================
+# ====================== TABS ======================
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Dashboard", "🎯 Analytics", "🔮 Forecasting", "🧠 AI Insights", "📄 Reports"])
 
 with tab1:
-    col1, col2 = st.columns([3,2])
-    with col1:
-        st.subheader("KMeans Customer Segmentation")
-        if len(filtered_df) > 10:
-            feat = filtered_df[["Sales", "Profit", "Quantity"]].fillna(0)
-            scaled = StandardScaler().fit_transform(feat)
-            kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
-            filtered_df = filtered_df.copy()
-            filtered_df["Cluster"] = kmeans.labels_
-            
-            fig = px.scatter(filtered_df, x="Sales", y="Profit", color="Cluster",
-                           size="Quantity", hover_data=["Product", "Region"],
-                           title="Advanced Customer/Product Clustering", template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
-
-    with col2:
-        st.subheader("Top Performers")
-        st.dataframe(filtered_df.groupby("Product")["Sales"].sum().nlargest(10).reset_index(), use_container_width=True)
+    st.subheader("🎯 KMeans Customer & Product Segmentation")
+    if len(filtered_df) > 10:
+        features = filtered_df[["Sales", "Profit", "Quantity"]].fillna(0)
+        scaled = StandardScaler().fit_transform(features)
+        
+        kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
+        clustered_df = filtered_df.copy()
+        clustered_df["Cluster"] = kmeans.labels_
+        
+        fig = px.scatter(clustered_df, x="Sales", y="Profit", color="Cluster",
+                        size="Quantity", hover_data=["Product", "Region"],
+                        title="Advanced KMeans Clustering", template="plotly_dark")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("Not enough data for clustering")
 
 with tab2:
     colA, colB = st.columns(2)
@@ -133,10 +125,11 @@ with tab2:
         monthly = filtered_df.groupby("YearMonth")["Sales"].sum().reset_index()
         st.plotly_chart(px.line(monthly, x="YearMonth", y="Sales", title="Revenue Trend", markers=True, template="plotly_dark"), use_container_width=True)
     with colB:
-        st.plotly_chart(px.pie(filtered_df.groupby("Category")["Sales"].sum().reset_index(), names="Category", values="Sales", hole=0.6, title="Category Share"), use_container_width=True)
+        st.plotly_chart(px.pie(filtered_df.groupby("Category")["Sales"].sum().reset_index(), 
+                             names="Category", values="Sales", hole=0.6), use_container_width=True)
 
 with tab3:
-    st.subheader("🔮 AI Revenue Forecast (Next 6 Months)")
+    st.subheader("🔮 AI Revenue Forecasting")
     forecast_df = filtered_df.groupby("YearMonth")["Sales"].sum().reset_index()
     forecast_df["Month_No"] = range(1, len(forecast_df)+1)
     model = LinearRegression().fit(forecast_df[["Month_No"]], forecast_df["Sales"])
@@ -144,41 +137,33 @@ with tab3:
     pred = model.predict(future)
     
     fig_f = go.Figure()
-    fig_f.add_trace(go.Scatter(x=forecast_df["Month_No"], y=forecast_df["Sales"], name="Actual", line=dict(color="#00F5FF")))
-    fig_f.add_trace(go.Scatter(x=future.flatten(), y=pred, name="AI Forecast", line=dict(dash="dash", color="#FF00CC")))
+    fig_f.add_trace(go.Scatter(x=forecast_df["Month_No"], y=forecast_df["Sales"], name="Actual"))
+    fig_f.add_trace(go.Scatter(x=future.flatten(), y=pred, name="Forecast", line=dict(dash="dash")))
     st.plotly_chart(fig_f, use_container_width=True)
 
 with tab4:
     st.subheader("🧠 Advanced AI Insights")
     growth_score = min(100, round((profit_margin + health_score)/2, 1))
-    risk_score = 100 - growth_score
-    
     colX, colY = st.columns(2)
-    with colX:
-        st.metric("🚀 Growth Opportunity", f"{growth_score}%")
-        st.success("High growth potential in top categories")
-    with colY:
-        st.metric("⚠️ Risk Score", f"{risk_score}%")
-    
-    st.info(f"**Recommendation**: Scale aggressively in **{top_region}** and **{top_category}**")
+    with colX: st.metric("🚀 Growth Score", f"{growth_score}%")
+    with colY: st.metric("⚠️ Risk Score", f"{100 - growth_score}%")
+    st.info(f"**Top Recommendation**: Scale in **{top_region}** and focus on **{top_category}**")
 
 with tab5:
     st.subheader("📄 Executive Reports")
-    if st.button("Generate & Download PDF Report"):
+    if st.button("📥 Generate Executive PDF"):
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4)
         styles = getSampleStyleSheet()
         story = [Paragraph("INSIGHT IQ AI COPILOT - EXECUTIVE REPORT", styles['Title'])]
         story.append(Spacer(1,20))
-        story.append(Paragraph(f"Date: {datetime.now().strftime('%d %B %Y')}", styles['Normal']))
-        story.append(Paragraph(f"Total Revenue: ₹{total_sales:,.0f}", styles['Normal']))
-        story.append(Paragraph(f"Total Profit: ₹{total_profit:,.0f}", styles['Normal']))
+        story.append(Paragraph(f"Revenue: ₹{total_sales:,.0f}", styles['Normal']))
+        story.append(Paragraph(f"Profit: ₹{total_profit:,.0f}", styles['Normal']))
         story.append(Paragraph(f"Health Score: {health_score}/100", styles['Normal']))
         story.append(Paragraph(f"Top Region: {top_region}", styles['Normal']))
         doc.build(story)
         buffer.seek(0)
-        st.download_button("⬇️ Download PDF", buffer, "InsightIQ_Executive_Report.pdf", "application/pdf")
+        st.download_button("⬇️ Download PDF", buffer, "InsightIQ_Report.pdf", "application/pdf")
 
-st.markdown("---")
-st.success("🚀 **Ultimate Dangerous Version** Built by **Khushi Tamre** | Final Year AI & BI Masterpiece")
+st.success("🚀 **Dangerous Premium Version** by Khushi Tamre")
 st.balloons()
