@@ -933,7 +933,7 @@ st.markdown("""
     flex-wrap:wrap;
     gap:0.5rem;
 ">
-    <div style="font-size:0.82rem;color:#334155;">
+    <div style="font-size:0.82rem;ssscolor:#334155;">
         <span style="color:#7828ff;font-weight:700;">INSIGHT IQ AI COPILOT</span>
         &nbsp;·&nbsp; Built by <b style="color:#a78bfa;">Khushi Tamre</b>
     </div>
