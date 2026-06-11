@@ -9,7 +9,6 @@ from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score
 from sklearn.preprocessing import StandardScaler
-import xgboost as xgb
 import joblib
 import io
 from datetime import datetime, timedelta
