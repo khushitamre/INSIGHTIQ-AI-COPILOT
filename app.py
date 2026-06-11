@@ -6,7 +6,7 @@ import {
   PolarGrid, PolarAngleAxis, Radar
 } from "recharts";
 
-// ─── SAMPLE DATA ────────────────────────────────────────────────────────────
+# // ─── SAMPLE DATA ────────────────────────────────────────────────────────────
 
 const monthlyRevenue = [
   { month: "Jan", revenue: 420000, profit: 84000, orders: 312 },
