@@ -336,7 +336,8 @@ health_score = (
     75 if profit_margin >= 10 else 60
 )
 risk_level = "Low" if health_score >= 90 else "Medium" if health_score >= 75 else "High"
-confidence = "95%" if health_score >= 90 else "85%" if health_score >= 75 else “70%"                             
+confidence = "95%" if health_score >= 90 else "85%" if health_score >= 75 else “70%"
+                            
 # HEADER
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
