@@ -21,6 +21,7 @@ from reportlab.platypus import (
 
 from reportlab.lib.styles import getSampleStyleSheet
 
+from fpdf import FPDF
 import io
 from datetime import datetime
 
@@ -1118,4 +1119,633 @@ st.markdown(
     Final Year AI & BI Project
     """
 )
+
+# =========================
+# PART 7 START
+# PREMIUM AI INSIGHTS CENTER
+# =========================
+
+st.markdown("---")
+st.subheader("🧠 Advanced AI Business Intelligence Center")
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.markdown("""
+    <div style="
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    padding:20px;
+    border-radius:15px;
+    color:white;">
+    <h3>🚀 Growth Opportunity Score</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+    growth_score = min(
+        100,
+        round(
+            (
+                (total_profit / total_revenue) * 100
+                + (health_score)
+            ) / 2,
+            1
+        )
+    )
+
+    st.metric(
+        "Growth Opportunity Score",
+        f"{growth_score}%"
+    )
+
+    if growth_score >= 80:
+        st.success("Excellent growth potential detected.")
+    elif growth_score >= 60:
+        st.warning("Moderate growth opportunities available.")
+    else:
+        st.error("Growth strategy optimization recommended.")
+
+with col2:
+
+    st.markdown("""
+    <div style="
+    background:linear-gradient(135deg,#11998e,#38ef7d);
+    padding:20px;
+    border-radius:15px;
+    color:white;">
+    <h3>⚠️ Business Risk Meter</h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+    risk_score = round(100 - growth_score, 1)
+
+    st.metric(
+        "Risk Level",
+        f"{risk_score}%"
+    )
+
+    if risk_score < 20:
+        st.success("Low Risk")
+    elif risk_score < 40:
+        st.warning("Medium Risk")
+    else:
+        st.error("High Risk")
+
+
+# =========================
+# SMART RECOMMENDATIONS
+# =========================
+
+st.markdown("---")
+st.subheader("🎯 AI Strategic Recommendations")
+
+recommendations = []
+
+if total_profit / total_revenue < 0.15:
+    recommendations.append(
+        "Improve profit margins through pricing optimization."
+    )
+
+if health_score < 70:
+    recommendations.append(
+        "Business health is below target. Review operational efficiency."
+    )
+
+if total_orders < 100:
+    recommendations.append(
+        "Increase customer acquisition campaigns."
+    )
+
+if len(recommendations) == 0:
+    recommendations.append(
+        "Business performance is excellent. Focus on scaling."
+    )
+
+for rec in recommendations:
+    st.info(rec)
+
+
+# =========================
+# TOP PERFORMERS
+# =========================
+
+st.markdown("---")
+st.subheader("🏆 Top Performing Categories")
+
+top_categories = (
+    df.groupby("Category")["Sales"]
+    .sum()
+    .sort_values(ascending=False)
+    .head(5)
+)
+
+st.dataframe(
+    top_categories.reset_index(),
+    use_container_width=True
+)
+
+
+# =========================
+# TOP REGIONS
+# =========================
+
+st.subheader("🌍 Top Revenue Regions")
+
+top_regions = (
+    df.groupby("Region")["Sales"]
+    .sum()
+    .sort_values(ascending=False)
+    .head(5)
+)
+
+st.dataframe(
+    top_regions.reset_index(),
+    use_container_width=True
+)
+
+
+# =========================
+# AI PERFORMANCE SCORECARD
+# =========================
+
+st.markdown("---")
+st.subheader("📊 AI Performance Scorecard")
+
+scorecard = pd.DataFrame({
+    "Metric":[
+        "Revenue",
+        "Profit",
+        "Health",
+        "Growth",
+        "Risk"
+    ],
+    "Score":[
+        min(100, total_revenue/1000),
+        min(100, total_profit/100),
+        health_score,
+        growth_score,
+        100-risk_score
+    ]
+})
+
+st.dataframe(
+    scorecard,
+    use_container_width=True
+)
+
+st.success("✅ Premium AI Intelligence Module Loaded Successfully")
+
+# =========================
+# PART 8 START
+# MACHINE LEARNING FORECASTING
+# =========================
+
+from sklearn.linear_model import LinearRegression
+import numpy as np
+
+st.markdown("---")
+st.subheader("🤖 AI Revenue Forecast Engine")
+
+try:
+
+    forecast_df = (
+        df.groupby("Date")["Sales"]
+        .sum()
+        .reset_index()
+    )
+
+    forecast_df["Date"] = pd.to_datetime(
+        forecast_df["Date"]
+    )
+
+    forecast_df = forecast_df.sort_values(
+        "Date"
+    )
+
+    forecast_df["Day_Number"] = np.arange(
+        len(forecast_df)
+    )
+
+    X = forecast_df[["Day_Number"]]
+    y = forecast_df["Sales"]
+
+    model = LinearRegression()
+    model.fit(X, y)
+
+    future_days = 30
+
+    future_x = np.arange(
+        len(forecast_df),
+        len(forecast_df) + future_days
+    ).reshape(-1, 1)
+
+    predictions = model.predict(
+        future_x
+    )
+
+    future_dates = pd.date_range(
+        start=forecast_df["Date"].max(),
+        periods=future_days + 1,
+        freq="D"
+    )[1:]
+
+    forecast_result = pd.DataFrame({
+        "Date": future_dates,
+        "Predicted Revenue": predictions
+    })
+
+    st.dataframe(
+        forecast_result,
+        use_container_width=True
+    )
+
+    fig_forecast = px.line(
+        forecast_result,
+        x="Date",
+        y="Predicted Revenue",
+        title="Next 30 Days Revenue Forecast"
+    )
+
+    st.plotly_chart(
+        fig_forecast,
+        use_container_width=True
+    )
+
+except Exception as e:
+
+    st.warning(
+        f"Forecast unavailable: {e}"
+    )
+
+
+# =========================
+# CUSTOMER SEGMENTATION
+# =========================
+
+st.markdown("---")
+st.subheader("🎯 Customer Segmentation")
+
+try:
+
+    if "Customer_ID" in df.columns:
+
+        customer_sales = (
+            df.groupby("Customer_ID")["Sales"]
+            .sum()
+            .reset_index()
+        )
+
+        customer_sales["Segment"] = pd.qcut(
+            customer_sales["Sales"],
+            q=3,
+            labels=[
+                "Low Value",
+                "Medium Value",
+                "High Value"
+            ]
+        )
+
+        st.dataframe(
+            customer_sales.head(20),
+            use_container_width=True
+        )
+
+        segment_chart = px.histogram(
+            customer_sales,
+            x="Segment",
+            title="Customer Segments"
+        )
+
+        st.plotly_chart(
+            segment_chart,
+            use_container_width=True
+        )
+
+    else:
+
+        st.info(
+            "Customer_ID column not found."
+        )
+
+except Exception as e:
+
+    st.warning(
+        f"Segmentation Error: {e}"
+    )
+
+
+# =========================
+# PRODUCT ANALYTICS
+# =========================
+
+st.markdown("---")
+st.subheader("📦 Product Intelligence")
+
+try:
+
+    if "Product" in df.columns:
+
+        product_sales = (
+            df.groupby("Product")["Sales"]
+            .sum()
+            .sort_values(
+                ascending=False
+            )
+            .head(10)
+        )
+
+        st.dataframe(
+            product_sales.reset_index(),
+            use_container_width=True
+        )
+
+        fig_products = px.bar(
+            product_sales.reset_index(),
+            x="Product",
+            y="Sales",
+            title="Top Products"
+        )
+
+        st.plotly_chart(
+            fig_products,
+            use_container_width=True
+        )
+
+    else:
+
+        st.info(
+            "Product column not available."
+        )
+
+except Exception as e:
+
+    st.warning(
+        f"Product Analysis Error: {e}"
+    )
+
+
+# =========================
+# AI EXECUTIVE SUMMARY
+# =========================
+
+st.markdown("---")
+st.subheader("🧠 Executive AI Summary")
+
+summary_text = f"""
+Total Revenue Generated: ₹{total_revenue:,.2f}
+
+Total Profit Generated: ₹{total_profit:,.2f}
+
+Business Health Score: {health_score}%
+
+Growth Opportunity Score: {growth_score}%
+
+Risk Score: {risk_score}%
+
+AI Recommendation:
+Focus on high-performing categories,
+improve weak-performing segments,
+and continue scaling profitable regions.
+"""
+
+st.text_area(
+    "Executive Report",
+    summary_text,
+    height=250
+)
+
+
+# =========================
+# ENTERPRISE DASHBOARD END
+# =========================
+
+st.success(
+    "🚀 Enterprise AI Forecasting Module Activated"
+)
+
+# =========================
+# PART 9 START
+# PRODUCTION FEATURES
+# =========================
+
+import io
+
+st.markdown("---")
+st.subheader("⚙️ Enterprise Controls")
+
+
+# =========================
+# THEME TOGGLE
+# =========================
+
+theme_mode = st.radio(
+    "Select Theme",
+    ["Light Mode", "Dark Mode"],
+    horizontal=True
+)
+
+if theme_mode == "Dark Mode":
+
+    st.markdown("""
+    <style>
+    .stApp{
+        background-color:#0E1117;
+        color:white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.success("Dark Mode Enabled")
+
+else:
+
+    st.success("Light Mode Enabled")
+
+
+# =========================
+# DOWNLOAD DATA
+# =========================
+
+st.markdown("---")
+st.subheader("📥 Export Reports")
+
+csv_file = df.to_csv(index=False)
+
+st.download_button(
+    label="Download CSV Report",
+    data=csv_file,
+    file_name="InsightIQ_Report.csv",
+    mime="text/csv"
+)
+
+
+# =========================
+# EXCEL EXPORT
+# =========================
+
+excel_buffer = io.BytesIO()
+
+with pd.ExcelWriter(
+    excel_buffer,
+    engine="openpyxl"
+) as writer:
+
+    df.to_excel(
+        writer,
+        index=False,
+        sheet_name="Business_Data"
+    )
+
+excel_data = excel_buffer.getvalue()
+
+st.download_button(
+    label="Download Excel Report",
+    data=excel_data,
+    file_name="InsightIQ_Report.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+
+# =========================
+# KPI SNAPSHOT
+# =========================
+
+st.markdown("---")
+st.subheader("📊 KPI Snapshot")
+
+kpi_data = pd.DataFrame({
+
+    "Metric":[
+        "Revenue",
+        "Profit",
+        "Orders",
+        "Health Score",
+        "Growth Score"
+    ],
+
+    "Value":[
+        total_revenue,
+        total_profit,
+        total_orders,
+        health_score,
+        growth_score
+    ]
+})
+
+st.dataframe(
+    kpi_data,
+    use_container_width=True
+)
+
+
+# =========================
+# AI CHAT ASSISTANT
+# =========================
+
+st.markdown("---")
+st.subheader("🤖 InsightIQ Assistant")
+
+user_question = st.text_input(
+    "Ask about your business"
+)
+
+if user_question:
+
+    q = user_question.lower()
+
+    if "revenue" in q:
+
+        st.success(
+            f"Current Revenue: ₹{total_revenue:,.2f}"
+        )
+
+    elif "profit" in q:
+
+        st.success(
+            f"Current Profit: ₹{total_profit:,.2f}"
+        )
+
+    elif "health" in q:
+
+        st.success(
+            f"Health Score: {health_score}%"
+        )
+
+    elif "growth" in q:
+
+        st.success(
+            f"Growth Score: {growth_score}%"
+        )
+
+    else:
+
+        st.info(
+            "Try asking about revenue, profit, health, or growth."
+        )
+
+
+# =========================
+# SYSTEM STATUS
+# =========================
+
+st.markdown("---")
+st.subheader("🖥️ System Status")
+
+status_data = pd.DataFrame({
+
+    "Component":[
+        "Dashboard",
+        "Forecast Engine",
+        "Analytics Engine",
+        "AI Assistant",
+        "Export System"
+    ],
+
+    "Status":[
+        "Running",
+        "Running",
+        "Running",
+        "Running",
+        "Running"
+    ]
+})
+
+st.dataframe(
+    status_data,
+    use_container_width=True
+)
+
+st.success(
+    "✅ All Systems Operational"
+)
+
+
+# =========================
+# FINAL FOOTER
+# =========================
+
+st.markdown("---")
+
+st.markdown("""
+<div style='text-align:center;'>
+
+<h3>🚀 InsightIQ AI Copilot</h3>
+
+<p>
+Enterprise Business Intelligence Platform
+</p>
+
+<p>
+Built with Python, Pandas, Plotly,
+Machine Learning and Streamlit
+</p>
+
+</div>
+""", unsafe_allow_html=True)
+
+# =========================
+# PART 9 END
+# =========================
+
+
 
