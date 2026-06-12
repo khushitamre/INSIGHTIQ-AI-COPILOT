@@ -1218,7 +1218,7 @@ Excel Export - Filtered data download
 Dark/Light Theme Toggle - User choice
 Auto Insights Generator - AI khud bataega kya chal raha hai
 Drill-down Charts - Click karke detail dekho
-Performance Cache - 5x faster loading
+Performance Cache -  faster loading
 Mobile Responsive - Phone pe bhi mast chalega
 Comparison Mode - YoY, MoM growth auto calculate
 Alert System - Email/Slack webhook ready
