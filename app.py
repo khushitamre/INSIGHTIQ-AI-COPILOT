@@ -1168,7 +1168,7 @@ Ab Fix
 
 confidence = ... else "70%"
 
-confidence = ... else "70%" ← Curly quote hataya
+confidence = ... else "70%" 
 
 60-70
 
