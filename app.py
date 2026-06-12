@@ -1818,7 +1818,6 @@ Button dabao, model retrain ho jayega
 
 8. Model Metrics Dashboard
 
-MAE, RMSE, R²
 
 9. AutoML Pipeline
 
