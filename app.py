@@ -1794,7 +1794,7 @@ KMeans clustering se RFM analysis
 
 2. Sales Prediction Model
 
-RandomForest + XGBoost ensemble, R² score show karega
+RandomForest + XGBoost ensemble, R² score 
 
 3. Churn Prediction
 
