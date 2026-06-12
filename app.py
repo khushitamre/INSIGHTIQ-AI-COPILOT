@@ -1212,7 +1212,7 @@ Ye lo INSIGHT IQ AI COPILOT v2.0 - Premium Edition.
 Pura rewrite kiya hai production-grade banane ke liye. Line 339 ka error fix + 12 premium features add kiye.
 
 Premium Features Added:
-Prophet AI Forecast - LinearRegression se 10x better
+
 Date Range Picker - Year/Month/Quarter ki jagah proper calendar
 Excel Export - Filtered data download
 Dark/Light Theme Toggle - User choice
