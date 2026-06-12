@@ -2279,7 +2279,7 @@ Time Series: Prophet forecasting
 Anomaly Detection: IsolationForest
 Classification: Churn prediction with LogisticRegression
 Feature Engineering: RFM, date features, scaling
-Model Evaluation: MAE, RMSE, R², Accuracy
+Model Evaluation:Accuracy
 MLOps: Model caching, retraining, export
 Interactive ML: What-if simulator with live predictions
 Production Ready: Error handling, empty states, responsive UI
