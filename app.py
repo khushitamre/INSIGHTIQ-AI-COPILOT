@@ -1166,7 +1166,7 @@ Ab Fix
 
 339
 
-confidence = ... else “70%"
+confidence = ... else "70%"
 
 confidence = ... else "70%" ← Curly quote hataya
 
