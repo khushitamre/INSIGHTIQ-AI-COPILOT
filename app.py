@@ -1782,13 +1782,8 @@ Run Command:
 Bash
 pip install streamlit pandas numpy plotly prophet scikit-learn reportlab openpyxl
 streamlit run app.py
-Ab batao, aur kya feature chahiye? Real-time database connection, Slack alerts, ya multi-user auth?
 
-ye. mera machine learning ka. project hai toh ushke hisab se or features add karo complete machine learning project lagna chahiye
-Yesterday
-Samajh gaya 👌 tera project Machine Learning + BI Dashboard hai, to ab isme proper ML pipeline add karte hain. Ab ye sirf visualization nahi, complete ML Product lagega.
 
-New ML Features Added:
 Feature
 
 Kya karta hai
