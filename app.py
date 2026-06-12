@@ -7,7 +7,7 @@ Line 339 me syntax error hai: curly quote use kiya hai.
 Error line:
 
 Python
-confidence = "95%" if health_score >= 90 else "85%" if health_score >= 75 else “70%"
+confidence = "95%" if health_score >= 90 else "85%" if health_score >= 75 else "70%"
 “70%" me “ galat hai. Straight double quote hona chahiye "70%".
 
 Fix + Upgraded Version
